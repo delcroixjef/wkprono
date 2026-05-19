@@ -73,12 +73,12 @@ function Dashboard() {
               const tu = timeUntil(m.match_date);
               return (
                 <li key={m.id} className="flex items-center gap-3 px-4 py-3">
-                  <span className="grid h-7 w-7 place-items-center rounded-md bg-muted text-[11px] font-semibold text-muted-foreground">{m.match_number}</span>
+                  <span className="grid h-8 w-8 place-items-center rounded-md bg-black text-[11px] text-white" style={{ fontFamily: "'Archivo Black', sans-serif" }}>{m.match_number}</span>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium text-foreground">{m.home_team} <span className="text-muted-foreground">vs</span> {m.away_team}</div>
+                    <div className="truncate text-sm font-semibold text-foreground">{m.home_team} <span className="font-normal text-muted-foreground">vs</span> {m.away_team}</div>
                     <div className="text-[11px] text-muted-foreground">{formatDateTime(m.match_date)}{m.group_code ? ` · Groep ${m.group_code}` : ""}</div>
                   </div>
-                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${tu.urgent ? "bg-destructive/10 text-destructive" : "bg-bonus-amber/15 text-[color:var(--bonus-amber)]"}`}>
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide ${tu.urgent ? "bg-destructive/10 text-destructive" : "bg-wc-lime/25 text-black"}`}>
                     <Clock className="h-3 w-3" />{tu.label}
                   </span>
                 </li>
