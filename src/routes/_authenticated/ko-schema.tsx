@@ -49,16 +49,20 @@ function KOSchema() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold text-foreground">KO-schema</h1>
+        <div className="inline-flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-wc-purple" />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground" style={{ fontFamily: "'Oswald', sans-serif" }}>Knock-out</span>
+        </div>
+        <h1 className="mt-1 text-3xl font-bold uppercase tracking-tight text-foreground" style={{ fontFamily: "'Oswald', sans-serif" }}>KO-schema</h1>
         <p className="mt-1 text-sm text-muted-foreground">Voorspel de knock-out fase. Teams worden zichtbaar zodra de groepsfase afloopt.</p>
       </header>
 
       {champion && champion !== "—" && champion !== "TBD" && (
-        <div className="rounded-2xl border-2 border-bonus-amber bg-bonus-amber/10 p-4">
-          <div className="text-[11px] uppercase tracking-wider text-bonus-amber font-semibold">Jouw wereldkampioen</div>
-          <div className="mt-1 flex items-center gap-2">
-            <span className="text-2xl">🏆</span>
-            <span className="text-lg font-semibold text-foreground">{champion}</span>
+        <div className="tournament-surface relative overflow-hidden rounded-2xl p-5">
+          <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-wc-gold" style={{ fontFamily: "'Oswald', sans-serif" }}>Jouw wereldkampioen</div>
+          <div className="mt-2 flex items-center gap-3">
+            <span className="text-3xl">🏆</span>
+            <span className="text-2xl font-bold uppercase tracking-tight text-white" style={{ fontFamily: "'Oswald', sans-serif" }}>{champion}</span>
           </div>
         </div>
       )}
