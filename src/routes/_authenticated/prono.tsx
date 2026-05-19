@@ -52,15 +52,20 @@ function PronoPage() {
   return (
     <div className="space-y-4">
       <header>
-        <h1 className="text-2xl font-semibold text-foreground">Mijn prono</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Vul je voorspellingen in. Opgeslagen ✅</p>
+        <div className="inline-flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-wc-purple" />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground" style={{ fontFamily: "'Oswald', sans-serif" }}>Prono</span>
+        </div>
+        <h1 className="mt-1 text-3xl font-bold uppercase tracking-tight text-foreground" style={{ fontFamily: "'Oswald', sans-serif" }}>Mijn voorspellingen</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Vul je voorspellingen in. Automatisch opgeslagen ✅</p>
       </header>
 
       <div className="overflow-x-auto -mx-1">
         <div className="flex gap-1 px-1 pb-1">
           {tabs.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
-              className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${tab === t.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70"}`}>
+              className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-colors ${tab === t.id ? "bg-black text-white" : "bg-muted text-muted-foreground hover:bg-muted/70"}`}
+              style={{ fontFamily: "'Oswald', sans-serif" }}>
               {t.label}
             </button>
           ))}
