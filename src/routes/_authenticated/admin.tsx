@@ -123,7 +123,6 @@ function BonusResultsTab() {
       topscorer_country: f.topscorer_country || null,
       clean_sheet_countries: typeof f.clean_sheet_countries === "string" ? f.clean_sheet_countries.split(",").map((s: string) => s.trim()).filter(Boolean) : (f.clean_sheet_countries ?? []),
       early_exit_country: f.early_exit_country || null,
-      red_card_final: f.red_card_final ?? null,
       final_home_team: f.final_home_team || null,
       final_away_team: f.final_away_team || null,
       final_home_score: f.final_home_score ?? null,
@@ -145,12 +144,6 @@ function BonusResultsTab() {
       </Field>
       <Field label="Vroege thuisreis (top-10 land of 'geen')">
         <Input value={f.early_exit_country ?? ""} onChange={(e) => set("early_exit_country", e.target.value)} placeholder="Marokko / geen" />
-      </Field>
-      <Field label="Rode kaart in finale">
-        <div className="flex items-center gap-3">
-          <Switch checked={!!f.red_card_final} onCheckedChange={(v) => set("red_card_final", v)} />
-          <span className="text-sm text-muted-foreground">{f.red_card_final ? "Ja" : "Nee"}</span>
-        </div>
       </Field>
       <div className="grid grid-cols-2 gap-3">
         <Field label="Finale thuisteam"><CountrySel v={f.final_home_team} onChange={(v) => set("final_home_team", v)} /></Field>

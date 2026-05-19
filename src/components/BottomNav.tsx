@@ -24,13 +24,12 @@ export function BottomNav() {
       if (data.topscorer_country) n++;
       if (data.clean_sheet_country) n++;
       if (data.early_exit_country) n++;
-      if (data.red_card_final !== null) n++;
       if (data.final_home_team && data.final_home_score !== null) n++;
       setBonusFilled(n);
     });
   }, [user]);
 
-  const bonusBadge = bonusFilled !== null && bonusFilled < 5 ? 5 - bonusFilled : 0;
+  const bonusBadge = bonusFilled !== null && bonusFilled < 4 ? 4 - bonusFilled : 0;
 
   return (
     <nav className="sticky bottom-0 z-40 border-t border-border bg-surface">

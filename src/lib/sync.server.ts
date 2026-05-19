@@ -395,12 +395,11 @@ async function recomputeAllBonusPoints() {
 
   for (const p of preds) {
     const breakdown: Record<string, number> = {
-      topscorer: 0, clean_sheet: 0, early_exit: 0, red_card: 0, final_score: 0,
+      topscorer: 0, clean_sheet: 0, early_exit: 0, final_score: 0,
     };
     if (p.topscorer_country && stats.topscorer_countries?.includes(p.topscorer_country)) breakdown.topscorer = 5;
     if (p.clean_sheet_country && stats.clean_sheet_countries?.includes(p.clean_sheet_country)) breakdown.clean_sheet = 5;
     if (p.early_exit_country && stats.top10_eliminated_in_groups && p.early_exit_country === stats.top10_eliminated_in_groups) breakdown.early_exit = 8;
-    if (finalPlayed && stats.final_had_red_card !== null && p.red_card_final === stats.final_had_red_card) breakdown.red_card = 3;
     if (finalPlayed && final &&
         p.final_home_team === final.home_team && p.final_away_team === final.away_team &&
         p.final_home_score === final.actual_home_score && p.final_away_score === final.actual_away_score) {
