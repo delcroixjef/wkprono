@@ -231,7 +231,7 @@ export type Database = {
           created_at?: string
           display_name?: string
           email: string
-          id: string
+          id?: string
           is_admin?: boolean
           profile_confirmed?: boolean
         }
