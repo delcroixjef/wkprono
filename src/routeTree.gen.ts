@@ -19,6 +19,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedConfirmProfileRouteImport } from './routes/_authenticated/confirm-profile'
 import { Route as AuthenticatedBonusRouteImport } from './routes/_authenticated/bonus'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as ApiPublicHooksSyncResultsRouteImport } from './routes/api/public/hooks/sync-results'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -70,6 +71,12 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const ApiPublicHooksSyncResultsRoute =
+  ApiPublicHooksSyncResultsRouteImport.update({
+    id: '/api/public/hooks/sync-results',
+    path: '/api/public/hooks/sync-results',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -81,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/klassement': typeof AuthenticatedKlassementRoute
   '/ko-schema': typeof AuthenticatedKoSchemaRoute
   '/prono': typeof AuthenticatedPronoRoute
+  '/api/public/hooks/sync-results': typeof ApiPublicHooksSyncResultsRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -92,6 +100,7 @@ export interface FileRoutesByTo {
   '/klassement': typeof AuthenticatedKlassementRoute
   '/ko-schema': typeof AuthenticatedKoSchemaRoute
   '/prono': typeof AuthenticatedPronoRoute
+  '/api/public/hooks/sync-results': typeof ApiPublicHooksSyncResultsRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -105,6 +114,7 @@ export interface FileRoutesById {
   '/_authenticated/klassement': typeof AuthenticatedKlassementRoute
   '/_authenticated/ko-schema': typeof AuthenticatedKoSchemaRoute
   '/_authenticated/prono': typeof AuthenticatedPronoRoute
+  '/api/public/hooks/sync-results': typeof ApiPublicHooksSyncResultsRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -118,6 +128,7 @@ export interface FileRouteTypes {
     | '/klassement'
     | '/ko-schema'
     | '/prono'
+    | '/api/public/hooks/sync-results'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -129,6 +140,7 @@ export interface FileRouteTypes {
     | '/klassement'
     | '/ko-schema'
     | '/prono'
+    | '/api/public/hooks/sync-results'
   id:
     | '__root__'
     | '/'
@@ -141,12 +153,14 @@ export interface FileRouteTypes {
     | '/_authenticated/klassement'
     | '/_authenticated/ko-schema'
     | '/_authenticated/prono'
+    | '/api/public/hooks/sync-results'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ApiPublicHooksSyncResultsRoute: typeof ApiPublicHooksSyncResultsRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -221,6 +235,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/api/public/hooks/sync-results': {
+      id: '/api/public/hooks/sync-results'
+      path: '/api/public/hooks/sync-results'
+      fullPath: '/api/public/hooks/sync-results'
+      preLoaderRoute: typeof ApiPublicHooksSyncResultsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -252,6 +273,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
+  ApiPublicHooksSyncResultsRoute: ApiPublicHooksSyncResultsRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
