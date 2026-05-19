@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { greeting, formatDateTime, timeUntil } from "@/lib/format";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, Clock, Trophy, ListChecks } from "lucide-react";
+import { SectionEyebrow } from "@/components/wc/SectionEyebrow";
+import { TournamentCard, WCNumber, DisplayHeading } from "@/components/wc/TournamentCard";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({ component: Dashboard });
 
