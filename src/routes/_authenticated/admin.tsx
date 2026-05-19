@@ -242,3 +242,88 @@ function LocksTab() {
     </div>
   );
 }
+
+function SyncTab() {
+  const qc = useQueryClient();
+  const sync = useServerFn(triggerSync);
+  const [busy, setBusy] = useState(false);
+
+  const { data: logs, isLoading } = useQuery({
+    queryKey: ["sync-log"],
+    queryFn: async () => (await supabase.from("sync_log").select("*").order("ran_at", { ascending: false }).limit(10)).data ?? [],
+    refetchInterval: 15000,
+  });
+  const last = logs?.[0];
+  const lastOk = last?.status === "ok";
+
+  async function run() {
+    setBusy(true);
+    try {
+      const r = await sync();
+      if (r.status === "ok") toast.success(r.message ?? "Sync OK");
+      else toast.error(r.message ?? "Sync mislukt");
+      qc.invalidateQueries({ queryKey: ["sync-log"] });
+      qc.invalidateQueries({ queryKey: ["admin-matches"] });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Sync mislukt");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="rounded-2xl border border-border bg-surface p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              {last ? (
+                lastOk
+                  ? <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                  : <AlertCircle className="h-5 w-5 text-destructive" />
+              ) : <RefreshCw className="h-5 w-5 text-muted-foreground" />}
+              <h2 className="text-base font-semibold text-foreground">Automatische sync</h2>
+            </div>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Bron: openfootball/worldcup.json (publieke GitHub, geen API key nodig).
+              Cron draait elke 30 minuten tijdens het toernooi (11 jun – 19 jul 2026).
+            </p>
+            {last && (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Laatste run: <span className="font-medium text-foreground">
+                  {formatDistanceToNow(new Date(last.ran_at), { addSuffix: true })}
+                </span> — {last.message ?? last.status}
+              </p>
+            )}
+          </div>
+          <Button onClick={run} disabled={busy}>
+            <RefreshCw className={`mr-2 h-4 w-4 ${busy ? "animate-spin" : ""}`} />
+            {busy ? "Bezig…" : "Forceer sync"}
+          </Button>
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-surface">
+        <div className="border-b border-border px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Laatste 10 sync events
+        </div>
+        {isLoading ? <Skeleton className="h-40 m-3" /> : (
+          <ul className="divide-y divide-border">
+            {(logs ?? []).map((l) => (
+              <li key={l.id} className="flex items-center gap-3 px-4 py-2.5 text-xs">
+                <span className={`h-2 w-2 rounded-full ${l.status === "ok" ? "bg-emerald-500" : l.status === "error" ? "bg-destructive" : "bg-muted-foreground"}`} />
+                <span className="w-32 shrink-0 text-muted-foreground">{new Date(l.ran_at).toLocaleString("nl-BE")}</span>
+                <span className="flex-1 truncate text-foreground">{l.message ?? l.status}</span>
+                <span className="text-muted-foreground">{l.matches_updated}↑ {l.matches_locked}🔒 · {l.duration_ms}ms</span>
+              </li>
+            ))}
+            {(!logs || logs.length === 0) && (
+              <li className="px-4 py-6 text-center text-xs text-muted-foreground">Nog geen sync events.</li>
+            )}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+}
+
