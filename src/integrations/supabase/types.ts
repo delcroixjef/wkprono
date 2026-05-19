@@ -14,6 +14,42 @@ export type Database = {
   }
   public: {
     Tables: {
+      bonus_points: {
+        Row: {
+          breakdown: Json
+          points: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          breakdown?: Json
+          points?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          breakdown?: Json
+          points?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bonus_points_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "leaderboard"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "bonus_points_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bonus_predictions: {
         Row: {
           clean_sheet_country: string | null
@@ -119,10 +155,106 @@ export type Database = {
         }
         Relationships: []
       }
+      bonus_tournament_stats: {
+        Row: {
+          clean_sheet_countries: string[]
+          clean_sheet_leader_count: number
+          clean_sheets_by_country: Json
+          final_had_red_card: boolean | null
+          goals_by_country: Json
+          id: string
+          singleton: boolean
+          top10_eliminated_in_groups: string | null
+          topscorer_countries: string[]
+          updated_at: string
+        }
+        Insert: {
+          clean_sheet_countries?: string[]
+          clean_sheet_leader_count?: number
+          clean_sheets_by_country?: Json
+          final_had_red_card?: boolean | null
+          goals_by_country?: Json
+          id?: string
+          singleton?: boolean
+          top10_eliminated_in_groups?: string | null
+          topscorer_countries?: string[]
+          updated_at?: string
+        }
+        Update: {
+          clean_sheet_countries?: string[]
+          clean_sheet_leader_count?: number
+          clean_sheets_by_country?: Json
+          final_had_red_card?: boolean | null
+          goals_by_country?: Json
+          id?: string
+          singleton?: boolean
+          top10_eliminated_in_groups?: string | null
+          topscorer_countries?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      match_stats: {
+        Row: {
+          api_fixture_id: number | null
+          away_goals_detail: Json
+          away_red_cards: number
+          away_yellow_cards: number
+          created_at: string
+          home_goals_detail: Json
+          home_red_cards: number
+          home_yellow_cards: number
+          id: string
+          match_id: string
+          penalties_in_match: boolean
+          updated_at: string
+          went_to_extra_time: boolean
+        }
+        Insert: {
+          api_fixture_id?: number | null
+          away_goals_detail?: Json
+          away_red_cards?: number
+          away_yellow_cards?: number
+          created_at?: string
+          home_goals_detail?: Json
+          home_red_cards?: number
+          home_yellow_cards?: number
+          id?: string
+          match_id: string
+          penalties_in_match?: boolean
+          updated_at?: string
+          went_to_extra_time?: boolean
+        }
+        Update: {
+          api_fixture_id?: number | null
+          away_goals_detail?: Json
+          away_red_cards?: number
+          away_yellow_cards?: number
+          created_at?: string
+          home_goals_detail?: Json
+          home_red_cards?: number
+          home_yellow_cards?: number
+          id?: string
+          match_id?: string
+          penalties_in_match?: boolean
+          updated_at?: string
+          went_to_extra_time?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "match_stats_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: true
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       matches: {
         Row: {
           actual_away_score: number | null
           actual_home_score: number | null
+          api_fixture_id: number | null
           away_team: string
           group_code: string | null
           home_team: string
@@ -136,6 +268,7 @@ export type Database = {
         Insert: {
           actual_away_score?: number | null
           actual_home_score?: number | null
+          api_fixture_id?: number | null
           away_team: string
           group_code?: string | null
           home_team: string
@@ -149,6 +282,7 @@ export type Database = {
         Update: {
           actual_away_score?: number | null
           actual_home_score?: number | null
+          api_fixture_id?: number | null
           away_team?: string
           group_code?: string | null
           home_team?: string
@@ -243,6 +377,39 @@ export type Database = {
           id?: string
           is_admin?: boolean
           profile_confirmed?: boolean
+        }
+        Relationships: []
+      }
+      sync_log: {
+        Row: {
+          api_calls_used: number
+          duration_ms: number
+          id: string
+          matches_locked: number
+          matches_updated: number
+          message: string | null
+          ran_at: string
+          status: string
+        }
+        Insert: {
+          api_calls_used?: number
+          duration_ms?: number
+          id?: string
+          matches_locked?: number
+          matches_updated?: number
+          message?: string | null
+          ran_at?: string
+          status: string
+        }
+        Update: {
+          api_calls_used?: number
+          duration_ms?: number
+          id?: string
+          matches_locked?: number
+          matches_updated?: number
+          message?: string | null
+          ran_at?: string
+          status?: string
         }
         Relationships: []
       }
