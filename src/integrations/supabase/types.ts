@@ -61,7 +61,6 @@ export type Database = {
           final_home_team: string | null
           id: string
           is_locked: boolean
-          red_card_final: boolean | null
           topscorer_country: string | null
           updated_at: string
           user_id: string
@@ -76,7 +75,6 @@ export type Database = {
           final_home_team?: string | null
           id?: string
           is_locked?: boolean
-          red_card_final?: boolean | null
           topscorer_country?: string | null
           updated_at?: string
           user_id: string
@@ -91,7 +89,6 @@ export type Database = {
           final_home_team?: string | null
           id?: string
           is_locked?: boolean
-          red_card_final?: boolean | null
           topscorer_country?: string | null
           updated_at?: string
           user_id?: string
@@ -122,7 +119,6 @@ export type Database = {
           final_home_score: number | null
           final_home_team: string | null
           id: string
-          red_card_final: boolean | null
           singleton: boolean
           topscorer_country: string | null
           updated_at: string
@@ -135,7 +131,6 @@ export type Database = {
           final_home_score?: number | null
           final_home_team?: string | null
           id?: string
-          red_card_final?: boolean | null
           singleton?: boolean
           topscorer_country?: string | null
           updated_at?: string
@@ -148,7 +143,6 @@ export type Database = {
           final_home_score?: number | null
           final_home_team?: string | null
           id?: string
-          red_card_final?: boolean | null
           singleton?: boolean
           topscorer_country?: string | null
           updated_at?: string
@@ -160,7 +154,6 @@ export type Database = {
           clean_sheet_countries: string[]
           clean_sheet_leader_count: number
           clean_sheets_by_country: Json
-          final_had_red_card: boolean | null
           goals_by_country: Json
           id: string
           singleton: boolean
@@ -172,7 +165,6 @@ export type Database = {
           clean_sheet_countries?: string[]
           clean_sheet_leader_count?: number
           clean_sheets_by_country?: Json
-          final_had_red_card?: boolean | null
           goals_by_country?: Json
           id?: string
           singleton?: boolean
@@ -184,7 +176,6 @@ export type Database = {
           clean_sheet_countries?: string[]
           clean_sheet_leader_count?: number
           clean_sheets_by_country?: Json
-          final_had_red_card?: boolean | null
           goals_by_country?: Json
           id?: string
           singleton?: boolean

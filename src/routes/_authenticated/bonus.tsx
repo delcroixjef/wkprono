@@ -16,7 +16,6 @@ type Bonus = {
   topscorer_country: string | null;
   clean_sheet_country: string | null;
   early_exit_country: string | null;
-  red_card_final: boolean | null;
   final_home_team: string | null;
   final_away_team: string | null;
   final_home_score: number | null;
@@ -26,7 +25,7 @@ type Bonus = {
 
 const EMPTY: Bonus = {
   topscorer_country: null, clean_sheet_country: null, early_exit_country: null,
-  red_card_final: null, final_home_team: null, final_away_team: null,
+  final_home_team: null, final_away_team: null,
   final_home_score: null, final_away_score: null, is_locked: false,
 };
 
@@ -48,7 +47,7 @@ function BonusPage() {
 
   const set = <K extends keyof Bonus>(k: K, v: Bonus[K]) => setData(prev => ({ ...prev, [k]: v }));
   const filled = [data.topscorer_country, data.clean_sheet_country, data.early_exit_country,
-    data.red_card_final, (data.final_home_team && data.final_home_score !== null) ? 1 : null].filter(v => v !== null && v !== "").length;
+    (data.final_home_team && data.final_home_score !== null) ? 1 : null].filter(v => v !== null && v !== "").length;
 
   async function save() {
     if (!profile) return;
@@ -66,14 +65,14 @@ function BonusPage() {
     <div className="space-y-5 pb-24">
       <header>
         <h1 className="text-2xl font-semibold text-foreground">Bonusvragen</h1>
-        <p className="mt-1 text-sm text-muted-foreground">In te vullen vóór 11 juni 2026 — 21:00. Max 36 pt.</p>
+        <p className="mt-1 text-sm text-muted-foreground">In te vullen vóór 11 juni 2026 — 21:00. Max 33 pt.</p>
         <div className="mt-3">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <span>{filled} / 5 ingevuld</span>
-            <span>{Math.round((filled / 5) * 100)}%</span>
+            <span>{filled} / 4 ingevuld</span>
+            <span>{Math.round((filled / 4) * 100)}%</span>
           </div>
           <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
-            <div className="h-full bg-primary transition-all" style={{ width: `${(filled / 5) * 100}%` }} />
+            <div className="h-full bg-primary transition-all" style={{ width: `${(filled / 4) * 100}%` }} />
           </div>
         </div>
       </header>
@@ -104,17 +103,6 @@ function BonusPage() {
         </div>
       </BonusCard>
 
-      {/* Card 4 — Red card */}
-      <BonusCard color="red" Icon={Flame} points={3} title="Rode kaart finale" subtitle="Wordt er een rode kaart gegeven tijdens de finale?">
-        <div className="flex gap-2">
-          {[{ v: true, l: "Ja" }, { v: false, l: "Nee" }].map(o => (
-            <button key={o.l} type="button" disabled={locked} onClick={() => set("red_card_final", o.v)}
-              className={`flex-1 rounded-lg border px-4 py-3 text-sm font-medium transition-colors ${data.red_card_final === o.v ? "border-bonus-red bg-bonus-red/15 text-foreground" : "border-border bg-surface text-muted-foreground hover:bg-muted/50"} disabled:opacity-60`}>
-              {o.l}
-            </button>
-          ))}
-        </div>
-      </BonusCard>
 
       {/* Card 5 — Final exact score */}
       <BonusCard color="purple" Icon={Trophy} points={15} title="Exacte eindstand finale" subtitle="Hoogste bonus — moeilijkste vraag. Beide teams + exacte score.">
@@ -141,8 +129,8 @@ function BonusPage() {
       <div className="fixed inset-x-0 bottom-14 z-30 border-t border-border bg-surface/95 backdrop-blur p-3">
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-3">
           <div className="text-xs">
-            <div className="font-semibold text-foreground">Max bonus: 36 pt</div>
-            <div className="text-muted-foreground">{filled} / 5 ingevuld</div>
+            <div className="font-semibold text-foreground">Max bonus: 33 pt</div>
+            <div className="text-muted-foreground">{filled} / 4 ingevuld</div>
           </div>
           <Button onClick={save} disabled={busy || locked} className="h-11"><Save className="mr-2 h-4 w-4" />{busy ? "Opslaan…" : "Opslaan"}</Button>
         </div>
