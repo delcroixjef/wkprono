@@ -107,9 +107,12 @@ function PhaseBlock({ phase, matches, preds, userId, onSaved }: { phase: string;
   const playable = matches.some(m => m.home_team !== "TBD" && !m.is_locked);
 
   return (
-    <section className="rounded-2xl border border-border bg-surface">
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <h2 className="text-sm font-semibold text-foreground">{PHASE_LABELS[phase]}</h2>
+    <section className="overflow-hidden rounded-2xl border border-border bg-surface">
+      <div className="flex items-center justify-between border-b border-border bg-muted/40 px-4 py-3">
+        <h2 className="inline-flex items-center gap-2 text-sm font-bold uppercase tracking-wider text-foreground" style={{ fontFamily: "'Oswald', sans-serif" }}>
+          <span className="h-1.5 w-1.5 rounded-full bg-wc-purple" />
+          {PHASE_LABELS[phase]}
+        </h2>
         <span className="text-[11px] text-muted-foreground">{matches.length} wedstrijd{matches.length !== 1 ? "en" : ""}</span>
       </div>
       <ul className="divide-y divide-border">
