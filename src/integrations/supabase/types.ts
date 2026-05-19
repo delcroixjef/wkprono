@@ -14,13 +14,261 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      bonus_predictions: {
+        Row: {
+          clean_sheet_country: string | null
+          created_at: string
+          early_exit_country: string | null
+          final_away_score: number | null
+          final_away_team: string | null
+          final_home_score: number | null
+          final_home_team: string | null
+          id: string
+          is_locked: boolean
+          red_card_final: boolean | null
+          topscorer_country: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          clean_sheet_country?: string | null
+          created_at?: string
+          early_exit_country?: string | null
+          final_away_score?: number | null
+          final_away_team?: string | null
+          final_home_score?: number | null
+          final_home_team?: string | null
+          id?: string
+          is_locked?: boolean
+          red_card_final?: boolean | null
+          topscorer_country?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          clean_sheet_country?: string | null
+          created_at?: string
+          early_exit_country?: string | null
+          final_away_score?: number | null
+          final_away_team?: string | null
+          final_home_score?: number | null
+          final_home_team?: string | null
+          id?: string
+          is_locked?: boolean
+          red_card_final?: boolean | null
+          topscorer_country?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bonus_predictions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "leaderboard"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "bonus_predictions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      bonus_results: {
+        Row: {
+          clean_sheet_countries: string[] | null
+          early_exit_country: string | null
+          final_away_score: number | null
+          final_away_team: string | null
+          final_home_score: number | null
+          final_home_team: string | null
+          id: string
+          red_card_final: boolean | null
+          singleton: boolean
+          topscorer_country: string | null
+          updated_at: string
+        }
+        Insert: {
+          clean_sheet_countries?: string[] | null
+          early_exit_country?: string | null
+          final_away_score?: number | null
+          final_away_team?: string | null
+          final_home_score?: number | null
+          final_home_team?: string | null
+          id?: string
+          red_card_final?: boolean | null
+          singleton?: boolean
+          topscorer_country?: string | null
+          updated_at?: string
+        }
+        Update: {
+          clean_sheet_countries?: string[] | null
+          early_exit_country?: string | null
+          final_away_score?: number | null
+          final_away_team?: string | null
+          final_home_score?: number | null
+          final_home_team?: string | null
+          id?: string
+          red_card_final?: boolean | null
+          singleton?: boolean
+          topscorer_country?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      matches: {
+        Row: {
+          actual_away_score: number | null
+          actual_home_score: number | null
+          away_team: string
+          group_code: string | null
+          home_team: string
+          id: string
+          is_locked: boolean
+          match_date: string
+          match_number: number
+          phase: string
+          venue: string | null
+        }
+        Insert: {
+          actual_away_score?: number | null
+          actual_home_score?: number | null
+          away_team: string
+          group_code?: string | null
+          home_team: string
+          id?: string
+          is_locked?: boolean
+          match_date: string
+          match_number: number
+          phase: string
+          venue?: string | null
+        }
+        Update: {
+          actual_away_score?: number | null
+          actual_home_score?: number | null
+          away_team?: string
+          group_code?: string | null
+          home_team?: string
+          id?: string
+          is_locked?: boolean
+          match_date?: string
+          match_number?: number
+          phase?: string
+          venue?: string | null
+        }
+        Relationships: []
+      }
+      predictions: {
+        Row: {
+          created_at: string
+          id: string
+          match_id: string
+          points_earned: number | null
+          predicted_away_score: number
+          predicted_home_score: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          match_id: string
+          points_earned?: number | null
+          predicted_away_score: number
+          predicted_home_score: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          match_id?: string
+          points_earned?: number | null
+          predicted_away_score?: number
+          predicted_home_score?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "predictions_match_id_fkey"
+            columns: ["match_id"]
+            isOneToOne: false
+            referencedRelation: "matches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "predictions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "leaderboard"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "predictions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          avatar_initials: string
+          created_at: string
+          display_name: string
+          email: string
+          id: string
+          is_admin: boolean
+          profile_confirmed: boolean
+        }
+        Insert: {
+          avatar_initials?: string
+          created_at?: string
+          display_name?: string
+          email: string
+          id: string
+          is_admin?: boolean
+          profile_confirmed?: boolean
+        }
+        Update: {
+          avatar_initials?: string
+          created_at?: string
+          display_name?: string
+          email?: string
+          id?: string
+          is_admin?: boolean
+          profile_confirmed?: boolean
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      leaderboard: {
+        Row: {
+          avatar_initials: string | null
+          display_name: string | null
+          grand_total: number | null
+          rank: number | null
+          total_bonus_points: number | null
+          total_match_points: number | null
+          user_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      [_ in never]: never
+      calculate_match_points: {
+        Args: { _match_id: string }
+        Returns: undefined
+      }
+      is_admin: { Args: { _uid: string }; Returns: boolean }
+      recalculate_all_points: { Args: never; Returns: undefined }
+      user_bonus_points: { Args: { _uid: string }; Returns: number }
     }
     Enums: {
       [_ in never]: never
