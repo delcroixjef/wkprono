@@ -8,13 +8,12 @@ export function Header() {
   const { profile, signOut } = useAuth();
   return (
     <header className="sticky top-0 z-40 border-b border-border bg-surface/90 backdrop-blur">
-      <div className="absolute inset-x-0 bottom-0 h-[2px] bg-gradient-to-r from-transparent via-wc-purple/50 to-transparent" />
       <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
         <Link to="/dashboard" className="flex items-center gap-2.5">
           <Logo size={34} />
           <div className="leading-tight">
-            <div className="text-[15px] font-bold uppercase tracking-wide text-foreground" style={{ fontFamily: "'Oswald', sans-serif" }}>WK 2026 Prono</div>
-            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">WelZeker</div>
+            <div className="text-[15px] font-semibold text-foreground">WK 2026 Prono</div>
+            <div className="text-[11px] text-muted-foreground">WelZeker</div>
           </div>
         </Link>
         {profile && (

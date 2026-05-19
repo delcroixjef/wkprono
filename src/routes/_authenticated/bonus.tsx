@@ -64,27 +64,18 @@ function BonusPage() {
   return (
     <div className="space-y-5 pb-24">
       <header>
-        <div className="inline-flex items-center gap-2">
-          <span className="h-1.5 w-1.5 rounded-full bg-wc-lime" />
-          <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground" style={{ fontFamily: "'Oswald', sans-serif" }}>Bonus</span>
-        </div>
-        <h1 className="mt-1 text-3xl font-bold uppercase tracking-tight text-foreground" style={{ fontFamily: "'Oswald', sans-serif" }}>Bonusvragen</h1>
+        <h1 className="text-2xl font-semibold text-foreground">Bonusvragen</h1>
         <p className="mt-1 text-sm text-muted-foreground">In te vullen vóór 11 juni 2026 — 21:00. Max 33 pt.</p>
+        <div className="mt-3">
+          <div className="flex items-center justify-between text-xs text-muted-foreground">
+            <span>{filled} / 4 ingevuld</span>
+            <span>{Math.round((filled / 4) * 100)}%</span>
+          </div>
+          <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-muted">
+            <div className="h-full bg-primary transition-all" style={{ width: `${(filled / 4) * 100}%` }} />
+          </div>
+        </div>
       </header>
-
-      <div className="tournament-surface relative overflow-hidden rounded-2xl p-5">
-        <div className="flex items-baseline justify-between">
-          <div className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/60" style={{ fontFamily: "'Oswald', sans-serif" }}>Voortgang</div>
-          <div className="text-white/60 text-xs">{Math.round((filled / 4) * 100)}%</div>
-        </div>
-        <div className="mt-2 flex items-baseline gap-2">
-          <span className="text-5xl text-wc-lime" style={{ fontFamily: "'Archivo Black', sans-serif" }}>{filled}</span>
-          <span className="text-white/40 text-sm">/ 4 ingevuld</span>
-        </div>
-        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10">
-          <div className="h-full bg-wc-lime transition-all" style={{ width: `${(filled / 4) * 100}%` }} />
-        </div>
-      </div>
 
       {/* Card 1 — Topscorer */}
       <BonusCard color="primary" Icon={Trophy} points={5} title="Topscorer" subtitle="Welk land levert de topscorer?">
