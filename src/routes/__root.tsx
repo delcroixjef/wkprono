@@ -8,13 +8,13 @@ import { Toaster } from "@/components/ui/sonner";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Pagina niet gevonden</h2>
-        <p className="mt-2 text-sm text-muted-foreground">Deze pagina bestaat niet.</p>
+    <div className="tournament-surface relative flex min-h-screen items-center justify-center overflow-hidden px-4">
+      <div className="relative z-10 max-w-md text-center">
+        <div className="font-numeric text-[10rem] leading-none text-wc-purple drop-shadow-[0_0_40px_rgba(61,0,255,0.45)]" style={{ fontFamily: "'Archivo Black', sans-serif" }}>404</div>
+        <h2 className="mt-2 text-xl font-bold uppercase tracking-wider text-white" style={{ fontFamily: "'Oswald', sans-serif" }}>Buiten het veld</h2>
+        <p className="mt-2 text-sm text-white/60">Deze pagina staat niet in het schema.</p>
         <div className="mt-6">
-          <Link to="/" className="inline-flex rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90">Naar home</Link>
+          <Link to="/" className="inline-flex rounded-xl bg-wc-lime px-5 py-2.5 text-sm font-bold uppercase tracking-wider text-black hover:opacity-90">Terug naar de bank</Link>
         </div>
       </div>
     </div>
