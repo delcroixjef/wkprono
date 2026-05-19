@@ -126,9 +126,12 @@ function PredictionsBlock({ matches, preds, userId, onSaved }: { matches: Match[
   return (
     <div className="space-y-4">
       {[...byDay.entries()].map(([day, list]) => (
-        <div key={day} className="rounded-2xl border border-border bg-surface">
-          <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{formatDateTime(list[0].match_date)}</span>
+        <div key={day} className="overflow-hidden rounded-2xl border border-border bg-surface">
+          <div className="flex items-center justify-between border-b border-border bg-muted/40 px-4 py-2.5">
+            <span className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-foreground" style={{ fontFamily: "'Oswald', sans-serif" }}>
+              <span className="h-1 w-1 rounded-full bg-wc-purple" />
+              {formatDateTime(list[0].match_date)}
+            </span>
             <DeadlineChip iso={list[0].match_date} locked={list[0].is_locked} />
           </div>
           <ul className="divide-y divide-border">
@@ -140,9 +143,10 @@ function PredictionsBlock({ matches, preds, userId, onSaved }: { matches: Match[
               const points = pred?.points_earned;
               const disabled = m.is_locked || m.home_team === "TBD";
               return (
-                <li key={m.id} className="px-3 py-3">
+                <li key={m.id} className="relative px-3 py-3">
+                  {saved && <span className="absolute inset-y-2 left-0 w-[3px] rounded-r bg-wc-purple" />}
                   <div className="flex items-center gap-2">
-                    <span className="grid h-6 w-6 shrink-0 place-items-center rounded bg-muted text-[10px] font-semibold text-muted-foreground">{m.match_number}</span>
+                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded bg-black text-[10px] text-white" style={{ fontFamily: "'Archivo Black', sans-serif" }}>{m.match_number}</span>
                     <span className="flex-1 truncate text-right text-sm font-medium text-foreground">{m.home_team}</span>
                     <div className="flex items-center gap-1">
                       <input
