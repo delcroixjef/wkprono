@@ -27,16 +27,20 @@ function AdminPage() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-2xl font-semibold text-foreground">Admin</h1>
+        <div className="inline-flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-wc-purple" />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground" style={{ fontFamily: "'Oswald', sans-serif" }}>Backstage</span>
+        </div>
+        <h1 className="mt-1 text-3xl font-bold uppercase tracking-tight text-foreground" style={{ fontFamily: "'Oswald', sans-serif" }}>Admin</h1>
         <p className="mt-1 text-sm text-muted-foreground">Voer uitslagen in, beheer deelnemers en vergrendel wedstrijden.</p>
       </header>
       <Tabs defaultValue="sync" className="space-y-4">
         <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="sync">API Sync</TabsTrigger>
-          <TabsTrigger value="results">Uitslagen</TabsTrigger>
-          <TabsTrigger value="bonus">Bonus</TabsTrigger>
-          <TabsTrigger value="users">Deelnemers</TabsTrigger>
-          <TabsTrigger value="locks">Vergrendelen</TabsTrigger>
+          <TabsTrigger value="sync" className="uppercase tracking-wider text-[11px] font-bold" style={{ fontFamily: "'Oswald', sans-serif" }}>Sync</TabsTrigger>
+          <TabsTrigger value="results" className="uppercase tracking-wider text-[11px] font-bold" style={{ fontFamily: "'Oswald', sans-serif" }}>Uitslagen</TabsTrigger>
+          <TabsTrigger value="bonus" className="uppercase tracking-wider text-[11px] font-bold" style={{ fontFamily: "'Oswald', sans-serif" }}>Bonus</TabsTrigger>
+          <TabsTrigger value="users" className="uppercase tracking-wider text-[11px] font-bold" style={{ fontFamily: "'Oswald', sans-serif" }}>Deelnemers</TabsTrigger>
+          <TabsTrigger value="locks" className="uppercase tracking-wider text-[11px] font-bold" style={{ fontFamily: "'Oswald', sans-serif" }}>Locks</TabsTrigger>
         </TabsList>
         <TabsContent value="sync"><SyncTab /></TabsContent>
         <TabsContent value="results"><ResultsTab /></TabsContent>
