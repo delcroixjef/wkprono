@@ -44,13 +44,18 @@ function Dashboard() {
   return (
     <div className="space-y-6">
       <section>
-        <p className="text-xs uppercase tracking-wider text-muted-foreground">{greeting()}</p>
-        <h1 className="text-2xl font-semibold text-foreground">{profile?.display_name?.split(" ")[0]}</h1>
+        <SectionEyebrow accent="purple">Matchday · {greeting()}</SectionEyebrow>
+        <DisplayHeading className="mt-2 text-4xl font-bold text-foreground sm:text-5xl">
+          {profile?.display_name?.split(" ")[0]}
+        </DisplayHeading>
         <p className="mt-1 text-sm text-muted-foreground">Groepsfase loopt nog. Doe je voorspellingen in.</p>
       </section>
 
       <section className="grid grid-cols-3 gap-3">
-        <Stat label="Jouw punten" value={String(totalPoints)} accent />
+        <TournamentCard className="col-span-1 !p-4">
+          <div className="wc-eyebrow text-white/60" style={{ fontFamily: "'Oswald', sans-serif" }}>Jouw punten</div>
+          <WCNumber className="mt-1 block text-4xl text-wc-lime">{totalPoints}</WCNumber>
+        </TournamentCard>
         <Stat label="Positie" value={`#${rank}`} />
         <Stat label="Openstaand" value={String(openCount)} />
       </section>
