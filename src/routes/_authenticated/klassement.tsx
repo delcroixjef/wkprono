@@ -38,7 +38,11 @@ function Klassement() {
   return (
     <div className="space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold text-foreground">Klassement</h1>
+        <div className="inline-flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-wc-gold" />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground" style={{ fontFamily: "'Oswald', sans-serif" }}>Standings</span>
+        </div>
+        <h1 className="mt-1 text-3xl font-bold uppercase tracking-tight text-foreground" style={{ fontFamily: "'Oswald', sans-serif" }}>Klassement</h1>
         <p className="mt-1 text-sm text-muted-foreground">Live geüpdatet zodra uitslagen binnenkomen.</p>
       </header>
 
@@ -48,31 +52,33 @@ function Klassement() {
         <SummaryCard Icon={Star} label="Bonuspunten" value={String(me?.total_bonus_points ?? 0)} />
       </div>
 
-      <section className="rounded-2xl border border-border bg-surface">
+      <section className="overflow-hidden rounded-2xl border border-border bg-surface">
         {data.length === 0 ? (
           <p className="px-4 py-8 text-center text-sm text-muted-foreground">Nog geen deelnemers.</p>
         ) : (
           <ul className="divide-y divide-border">
             {data.map(r => {
-              const me = r.user_id === profile?.id;
+              const isMe = r.user_id === profile?.id;
               const isOpen = open === r.user_id;
+              const rankColor = r.rank === 1 ? "text-wc-gold" : r.rank === 2 ? "text-slate-400" : r.rank === 3 ? "text-amber-700" : "text-muted-foreground";
               return (
-                <li key={r.user_id}>
+                <li key={r.user_id} className="relative">
+                  {isMe && <span className="absolute inset-y-0 left-0 w-[3px] bg-wc-purple" />}
                   <button onClick={() => setOpen(isOpen ? null : r.user_id)}
-                    className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40 ${me ? "bg-primary-soft" : ""}`}>
-                    <span className={`w-7 text-center text-sm font-bold ${r.rank === 1 ? "text-bonus-amber" : "text-muted-foreground"}`}>#{r.rank}</span>
-                    <span className={`grid h-9 w-9 place-items-center rounded-full text-[12px] font-semibold ${me ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"}`}>{r.avatar_initials}</span>
+                    className={`flex w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-muted/40 ${isMe ? "bg-wc-purple-soft" : ""}`}>
+                    <span className={`w-8 text-center text-base ${rankColor}`} style={{ fontFamily: "'Archivo Black', sans-serif" }}>{r.rank}</span>
+                    <span className={`grid h-9 w-9 place-items-center rounded-full text-[12px] font-bold ${isMe ? "bg-wc-purple text-white" : "bg-muted text-foreground"}`}>{r.avatar_initials}</span>
                     <div className="min-w-0 flex-1">
-                      <div className={`truncate text-sm ${me ? "font-semibold text-primary" : "font-medium text-foreground"}`}>{r.display_name}{me ? " · jij" : ""}</div>
+                      <div className={`truncate text-sm ${isMe ? "font-bold text-wc-purple" : "font-semibold text-foreground"}`}>{r.display_name}{isMe ? " · jij" : ""}</div>
                       <div className="text-[11px] text-muted-foreground">{r.total_match_points} match + {r.total_bonus_points} bonus</div>
                     </div>
-                    <span className="text-base font-semibold tabular-nums text-foreground">{r.grand_total}<span className="text-xs text-muted-foreground"> pt</span></span>
+                    <span className="text-xl tabular-nums text-foreground" style={{ fontFamily: "'Archivo Black', sans-serif" }}>{r.grand_total}<span className="ml-1 text-[10px] font-normal text-muted-foreground" style={{ fontFamily: "'Inter', sans-serif" }}>PT</span></span>
                   </button>
                   {isOpen && (
                     <div className="border-t border-border bg-muted/30 px-4 py-3 text-xs text-muted-foreground">
                       <div className="flex justify-between"><span>Wedstrijdpunten</span><span className="font-semibold text-foreground">{r.total_match_points}</span></div>
                       <div className="mt-1 flex justify-between"><span>Bonuspunten</span><span className="font-semibold text-foreground">{r.total_bonus_points}</span></div>
-                      <div className="mt-2 flex justify-between border-t border-border pt-2"><span>Totaal</span><span className="font-bold text-primary">{r.grand_total} pt</span></div>
+                      <div className="mt-2 flex justify-between border-t border-border pt-2"><span>Totaal</span><span className="font-bold text-wc-purple">{r.grand_total} pt</span></div>
                     </div>
                   )}
                 </li>
