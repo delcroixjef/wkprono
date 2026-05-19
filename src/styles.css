@@ -37,14 +37,21 @@
   --color-bonus-amber: var(--bonus-amber);
   --color-bonus-red: var(--bonus-red);
   --color-bonus-purple: var(--bonus-purple);
+  --color-tournament: var(--tournament-bg);
+  --color-wc-purple: var(--wc-purple);
+  --color-wc-purple-soft: var(--wc-purple-soft);
+  --color-wc-lime: var(--wc-lime);
+  --color-wc-gold: var(--wc-gold);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Oswald", "Inter", ui-sans-serif, sans-serif;
+  --font-numeric: "Archivo Black", "Oswald", ui-sans-serif, sans-serif;
 }
 
 :root {
-  --radius: 0.75rem;
+  --radius: 1rem;
   /* Base surfaces */
   --background: oklch(0.985 0.003 240);
   --foreground: oklch(0.18 0.02 240);
@@ -54,7 +61,7 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.18 0.02 240);
 
-  /* Primary: WelZeker teal #1D9E75 ~ oklch(0.62 0.14 160) */
+  /* Primary: WelZeker teal */
   --primary: oklch(0.62 0.14 160);
   --primary-foreground: oklch(1 0 0);
   --primary-soft: oklch(0.95 0.03 160);
@@ -79,6 +86,13 @@
   --bonus-red: oklch(0.62 0.22 27);
   --bonus-purple: oklch(0.55 0.18 295);
 
+  /* WK 2026 tournament palette */
+  --tournament-bg: oklch(0.12 0.015 270);
+  --wc-purple: oklch(0.42 0.27 282);        /* ~#3D00FF */
+  --wc-purple-soft: oklch(0.95 0.04 282);
+  --wc-lime: oklch(0.92 0.22 125);          /* ~#BAFF00 */
+  --wc-gold: oklch(0.83 0.16 85);
+
   --border: oklch(0.92 0.005 240);
   --input: oklch(0.92 0.005 240);
   --ring: oklch(0.62 0.14 160);
@@ -100,9 +114,10 @@
   width: 3rem;
   height: 2.75rem;
   text-align: center;
-  font-weight: 600;
+  font-weight: 700;
+  font-family: var(--font-numeric);
   font-size: 1.05rem;
-  border-radius: 0.5rem;
+  border-radius: 0.6rem;
   border: 1px solid var(--color-border);
   background: var(--color-surface);
   transition: all .15s ease;
@@ -111,4 +126,21 @@
   border-color: var(--color-primary);
   background: var(--color-primary-soft);
   color: var(--color-primary);
+}
+
+/* Tournament hero surface */
+@utility tournament-surface {
+  background:
+    radial-gradient(circle at 20% 0%, color-mix(in oklab, var(--wc-purple) 35%, transparent) 0%, transparent 55%),
+    radial-gradient(circle at 90% 100%, color-mix(in oklab, var(--wc-lime) 18%, transparent) 0%, transparent 55%),
+    var(--tournament-bg);
+  color: oklch(0.98 0 0);
+}
+
+@utility wc-eyebrow {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
 }

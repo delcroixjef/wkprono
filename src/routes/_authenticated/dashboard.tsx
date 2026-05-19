@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { greeting, formatDateTime, timeUntil } from "@/lib/format";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, Clock, Trophy, ListChecks } from "lucide-react";
+import { SectionEyebrow } from "@/components/wc/SectionEyebrow";
+import { TournamentCard, WCNumber, DisplayHeading } from "@/components/wc/TournamentCard";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({ component: Dashboard });
 
@@ -42,13 +44,18 @@ function Dashboard() {
   return (
     <div className="space-y-6">
       <section>
-        <p className="text-xs uppercase tracking-wider text-muted-foreground">{greeting()}</p>
-        <h1 className="text-2xl font-semibold text-foreground">{profile?.display_name?.split(" ")[0]}</h1>
+        <SectionEyebrow accent="purple">Matchday · {greeting()}</SectionEyebrow>
+        <DisplayHeading className="mt-2 text-4xl font-bold text-foreground sm:text-5xl">
+          {profile?.display_name?.split(" ")[0]}
+        </DisplayHeading>
         <p className="mt-1 text-sm text-muted-foreground">Groepsfase loopt nog. Doe je voorspellingen in.</p>
       </section>
 
       <section className="grid grid-cols-3 gap-3">
-        <Stat label="Jouw punten" value={String(totalPoints)} accent />
+        <TournamentCard className="col-span-1 !p-4">
+          <div className="wc-eyebrow text-white/60" style={{ fontFamily: "'Oswald', sans-serif" }}>Jouw punten</div>
+          <WCNumber className="mt-1 block text-4xl text-wc-lime">{totalPoints}</WCNumber>
+        </TournamentCard>
         <Stat label="Positie" value={`#${rank}`} />
         <Stat label="Openstaand" value={String(openCount)} />
       </section>
@@ -66,12 +73,12 @@ function Dashboard() {
               const tu = timeUntil(m.match_date);
               return (
                 <li key={m.id} className="flex items-center gap-3 px-4 py-3">
-                  <span className="grid h-7 w-7 place-items-center rounded-md bg-muted text-[11px] font-semibold text-muted-foreground">{m.match_number}</span>
+                  <span className="grid h-8 w-8 place-items-center rounded-md bg-black text-[11px] text-white" style={{ fontFamily: "'Archivo Black', sans-serif" }}>{m.match_number}</span>
                   <div className="min-w-0 flex-1">
-                    <div className="truncate text-sm font-medium text-foreground">{m.home_team} <span className="text-muted-foreground">vs</span> {m.away_team}</div>
+                    <div className="truncate text-sm font-semibold text-foreground">{m.home_team} <span className="font-normal text-muted-foreground">vs</span> {m.away_team}</div>
                     <div className="text-[11px] text-muted-foreground">{formatDateTime(m.match_date)}{m.group_code ? ` · Groep ${m.group_code}` : ""}</div>
                   </div>
-                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${tu.urgent ? "bg-destructive/10 text-destructive" : "bg-bonus-amber/15 text-[color:var(--bonus-amber)]"}`}>
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide ${tu.urgent ? "bg-destructive/10 text-destructive" : "bg-wc-lime/25 text-black"}`}>
                     <Clock className="h-3 w-3" />{tu.label}
                   </span>
                 </li>

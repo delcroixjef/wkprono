@@ -52,15 +52,20 @@ function PronoPage() {
   return (
     <div className="space-y-4">
       <header>
-        <h1 className="text-2xl font-semibold text-foreground">Mijn prono</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Vul je voorspellingen in. Opgeslagen ✅</p>
+        <div className="inline-flex items-center gap-2">
+          <span className="h-1.5 w-1.5 rounded-full bg-wc-purple" />
+          <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-muted-foreground" style={{ fontFamily: "'Oswald', sans-serif" }}>Prono</span>
+        </div>
+        <h1 className="mt-1 text-3xl font-bold uppercase tracking-tight text-foreground" style={{ fontFamily: "'Oswald', sans-serif" }}>Mijn voorspellingen</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Vul je voorspellingen in. Automatisch opgeslagen ✅</p>
       </header>
 
       <div className="overflow-x-auto -mx-1">
         <div className="flex gap-1 px-1 pb-1">
           {tabs.map(t => (
             <button key={t.id} onClick={() => setTab(t.id)}
-              className={`whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${tab === t.id ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/70"}`}>
+              className={`whitespace-nowrap rounded-full px-3.5 py-1.5 text-[11px] font-bold uppercase tracking-wider transition-colors ${tab === t.id ? "bg-black text-white" : "bg-muted text-muted-foreground hover:bg-muted/70"}`}
+              style={{ fontFamily: "'Oswald', sans-serif" }}>
               {t.label}
             </button>
           ))}
@@ -121,9 +126,12 @@ function PredictionsBlock({ matches, preds, userId, onSaved }: { matches: Match[
   return (
     <div className="space-y-4">
       {[...byDay.entries()].map(([day, list]) => (
-        <div key={day} className="rounded-2xl border border-border bg-surface">
-          <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{formatDateTime(list[0].match_date)}</span>
+        <div key={day} className="overflow-hidden rounded-2xl border border-border bg-surface">
+          <div className="flex items-center justify-between border-b border-border bg-muted/40 px-4 py-2.5">
+            <span className="inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-foreground" style={{ fontFamily: "'Oswald', sans-serif" }}>
+              <span className="h-1 w-1 rounded-full bg-wc-purple" />
+              {formatDateTime(list[0].match_date)}
+            </span>
             <DeadlineChip iso={list[0].match_date} locked={list[0].is_locked} />
           </div>
           <ul className="divide-y divide-border">
@@ -135,9 +143,10 @@ function PredictionsBlock({ matches, preds, userId, onSaved }: { matches: Match[
               const points = pred?.points_earned;
               const disabled = m.is_locked || m.home_team === "TBD";
               return (
-                <li key={m.id} className="px-3 py-3">
+                <li key={m.id} className="relative px-3 py-3">
+                  {saved && <span className="absolute inset-y-2 left-0 w-[3px] rounded-r bg-wc-purple" />}
                   <div className="flex items-center gap-2">
-                    <span className="grid h-6 w-6 shrink-0 place-items-center rounded bg-muted text-[10px] font-semibold text-muted-foreground">{m.match_number}</span>
+                    <span className="grid h-7 w-7 shrink-0 place-items-center rounded bg-black text-[10px] text-white" style={{ fontFamily: "'Archivo Black', sans-serif" }}>{m.match_number}</span>
                     <span className="flex-1 truncate text-right text-sm font-medium text-foreground">{m.home_team}</span>
                     <div className="flex items-center gap-1">
                       <input
