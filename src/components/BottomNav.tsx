@@ -37,14 +37,15 @@ export function BottomNav() {
         {items.map(({ to, label, Icon }) => (
           <Link
             key={to} to={to}
-            activeProps={{ className: "text-primary" }}
+            activeProps={{ className: "text-primary [&_.nav-bar]:bg-wc-purple" }}
             inactiveProps={{ className: "text-muted-foreground" }}
-            className="relative flex flex-col items-center justify-center gap-0.5 py-2.5 text-[11px] font-medium transition-colors hover:text-foreground"
+            className="relative flex flex-col items-center justify-center gap-0.5 py-2.5 text-[10px] font-bold uppercase tracking-wider transition-colors hover:text-foreground"
           >
+            <span className="nav-bar absolute top-0 left-1/2 h-[3px] w-8 -translate-x-1/2 rounded-b-full bg-transparent transition-colors" />
             <Icon className="h-5 w-5" />
-            <span>{label}</span>
+            <span style={{ fontFamily: "'Oswald', sans-serif" }}>{label}</span>
             {to === "/bonus" && bonusBadge > 0 && (
-              <span className="absolute right-[28%] top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-bonus-amber px-1 text-[9px] font-semibold text-white">{bonusBadge}</span>
+              <span className="absolute right-[28%] top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-wc-lime px-1 text-[9px] font-extrabold text-black">{bonusBadge}</span>
             )}
           </Link>
         ))}
