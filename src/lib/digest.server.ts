@@ -1,11 +1,13 @@
-// Server-only: dagelijkse e-mail digest via Resend.
+// Server-only: dagelijkse e-mail digest via Lovable Emails queue.
 // Bepaalt "gisteren" in Europe/Brussels, verzamelt uitslagen + punten per deelnemer,
-// stuurt mail en logt elke run.
+// enqueued mail naar de transactional_emails queue en logt elke run.
 
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const TZ = "Europe/Brussels";
 const APP_URL = "https://wkprono.lovable.app";
+const SENDER_DOMAIN = "notify.welzeker.be";
+const FROM_ADDRESS = `WelZeker WK Prono <prono@${SENDER_DOMAIN}>`;
 
 function ymdInTZ(d: Date): { y: number; m: number; day: number } {
   const parts = new Intl.DateTimeFormat("en-CA", {
