@@ -51,9 +51,19 @@ function PronoPage() {
 
   return (
     <div className="space-y-4">
-      <header>
-        <h1 className="text-2xl font-semibold text-foreground">Mijn prono</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Vul je voorspellingen in. Opgeslagen ✅</p>
+      <header className="space-y-3">
+        <div>
+          <h1 className="text-2xl font-semibold text-foreground">Mijn prono</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Vul je voorspellingen in. Opgeslagen ✅</p>
+        </div>
+        <div className="flex gap-2">
+          <Link to="/bonus" className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted/50">
+            <Star className="h-3.5 w-3.5 text-[color:var(--bonus-amber)]" /> Bonusvragen
+          </Link>
+          <Link to="/ko-schema" className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-surface px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted/50">
+            <Trophy className="h-3.5 w-3.5 text-primary" /> KO-schema
+          </Link>
+        </div>
       </header>
 
       <div className="overflow-x-auto -mx-1">
