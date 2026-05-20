@@ -351,6 +351,7 @@ function Tile({ label, value, sub, tone }: { label: string; value: string; sub?:
 
 function EmailsTab() {
   const qc = useQueryClient();
+  const { profile } = useAuth();
   const test = useServerFn(sendDigestTest);
   const runNow = useServerFn(sendDigestNow);
   const [busy, setBusy] = useState<"test" | "run" | null>(null);
