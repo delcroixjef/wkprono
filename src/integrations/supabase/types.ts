@@ -246,42 +246,54 @@ export type Database = {
           actual_away_score: number | null
           actual_home_score: number | null
           api_fixture_id: number | null
+          auto_sync_override: boolean
           away_team: string
           group_code: string | null
           home_team: string
           id: string
           is_locked: boolean
+          last_synced_at: string | null
+          last_synced_score: Json | null
           match_date: string
           match_number: number
           phase: string
+          source: string
           venue: string | null
         }
         Insert: {
           actual_away_score?: number | null
           actual_home_score?: number | null
           api_fixture_id?: number | null
+          auto_sync_override?: boolean
           away_team: string
           group_code?: string | null
           home_team: string
           id?: string
           is_locked?: boolean
+          last_synced_at?: string | null
+          last_synced_score?: Json | null
           match_date: string
           match_number: number
           phase: string
+          source?: string
           venue?: string | null
         }
         Update: {
           actual_away_score?: number | null
           actual_home_score?: number | null
           api_fixture_id?: number | null
+          auto_sync_override?: boolean
           away_team?: string
           group_code?: string | null
           home_team?: string
           id?: string
           is_locked?: boolean
+          last_synced_at?: string | null
+          last_synced_score?: Json | null
           match_date?: string
           match_number?: number
           phase?: string
+          source?: string
           venue?: string | null
         }
         Relationships: []
@@ -291,6 +303,7 @@ export type Database = {
           created_at: string
           id: string
           match_id: string
+          points_breakdown: Json
           points_earned: number | null
           predicted_away_score: number
           predicted_home_score: number
@@ -301,6 +314,7 @@ export type Database = {
           created_at?: string
           id?: string
           match_id: string
+          points_breakdown?: Json
           points_earned?: number | null
           predicted_away_score: number
           predicted_home_score: number
@@ -311,6 +325,7 @@ export type Database = {
           created_at?: string
           id?: string
           match_id?: string
+          points_breakdown?: Json
           points_earned?: number | null
           predicted_away_score?: number
           predicted_home_score?: number
