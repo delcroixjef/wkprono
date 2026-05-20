@@ -21,6 +21,7 @@ import { Route as AuthenticatedConfirmProfileRouteImport } from './routes/_authe
 import { Route as AuthenticatedBonusRouteImport } from './routes/_authenticated/bonus'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
 import { Route as ApiPublicHooksSyncResultsRouteImport } from './routes/api/public/hooks/sync-results'
+import { Route as ApiPublicHooksSendDailyDigestRouteImport } from './routes/api/public/hooks/send-daily-digest'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -84,6 +85,12 @@ const ApiPublicHooksSyncResultsRoute =
     path: '/api/public/hooks/sync-results',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksSendDailyDigestRoute =
+  ApiPublicHooksSendDailyDigestRouteImport.update({
+    id: '/api/public/hooks/send-daily-digest',
+    path: '/api/public/hooks/send-daily-digest',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -96,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/ko-schema': typeof AuthenticatedKoSchemaRoute
   '/prono': typeof AuthenticatedPronoRoute
   '/wedstrijden': typeof AuthenticatedWedstrijdenRoute
+  '/api/public/hooks/send-daily-digest': typeof ApiPublicHooksSendDailyDigestRoute
   '/api/public/hooks/sync-results': typeof ApiPublicHooksSyncResultsRoute
 }
 export interface FileRoutesByTo {
@@ -109,6 +117,7 @@ export interface FileRoutesByTo {
   '/ko-schema': typeof AuthenticatedKoSchemaRoute
   '/prono': typeof AuthenticatedPronoRoute
   '/wedstrijden': typeof AuthenticatedWedstrijdenRoute
+  '/api/public/hooks/send-daily-digest': typeof ApiPublicHooksSendDailyDigestRoute
   '/api/public/hooks/sync-results': typeof ApiPublicHooksSyncResultsRoute
 }
 export interface FileRoutesById {
@@ -124,6 +133,7 @@ export interface FileRoutesById {
   '/_authenticated/ko-schema': typeof AuthenticatedKoSchemaRoute
   '/_authenticated/prono': typeof AuthenticatedPronoRoute
   '/_authenticated/wedstrijden': typeof AuthenticatedWedstrijdenRoute
+  '/api/public/hooks/send-daily-digest': typeof ApiPublicHooksSendDailyDigestRoute
   '/api/public/hooks/sync-results': typeof ApiPublicHooksSyncResultsRoute
 }
 export interface FileRouteTypes {
@@ -139,6 +149,7 @@ export interface FileRouteTypes {
     | '/ko-schema'
     | '/prono'
     | '/wedstrijden'
+    | '/api/public/hooks/send-daily-digest'
     | '/api/public/hooks/sync-results'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -152,6 +163,7 @@ export interface FileRouteTypes {
     | '/ko-schema'
     | '/prono'
     | '/wedstrijden'
+    | '/api/public/hooks/send-daily-digest'
     | '/api/public/hooks/sync-results'
   id:
     | '__root__'
@@ -166,6 +178,7 @@ export interface FileRouteTypes {
     | '/_authenticated/ko-schema'
     | '/_authenticated/prono'
     | '/_authenticated/wedstrijden'
+    | '/api/public/hooks/send-daily-digest'
     | '/api/public/hooks/sync-results'
   fileRoutesById: FileRoutesById
 }
@@ -173,6 +186,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
+  ApiPublicHooksSendDailyDigestRoute: typeof ApiPublicHooksSendDailyDigestRoute
   ApiPublicHooksSyncResultsRoute: typeof ApiPublicHooksSyncResultsRoute
 }
 
@@ -262,6 +276,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksSyncResultsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/send-daily-digest': {
+      id: '/api/public/hooks/send-daily-digest'
+      path: '/api/public/hooks/send-daily-digest'
+      fullPath: '/api/public/hooks/send-daily-digest'
+      preLoaderRoute: typeof ApiPublicHooksSendDailyDigestRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -295,6 +316,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
+  ApiPublicHooksSendDailyDigestRoute: ApiPublicHooksSendDailyDigestRoute,
   ApiPublicHooksSyncResultsRoute: ApiPublicHooksSyncResultsRoute,
 }
 export const routeTree = rootRouteImport
