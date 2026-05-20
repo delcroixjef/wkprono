@@ -41,6 +41,7 @@ function AdminPage() {
           <TabsTrigger value="locks">Vergrendelen</TabsTrigger>
         </TabsList>
         <TabsContent value="sync"><SyncTab /></TabsContent>
+        <TabsContent value="emails"><EmailsTab /></TabsContent>
         <TabsContent value="results"><ResultsTab /></TabsContent>
         <TabsContent value="bonus"><BonusResultsTab /></TabsContent>
         <TabsContent value="users"><UsersTab /></TabsContent>
