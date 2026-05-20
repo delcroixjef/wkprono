@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { Lock, Unlock, Save, Calculator, RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { triggerSync } from "@/lib/sync.functions";
+import { sendDigestTest, sendDigestNow } from "@/lib/digest.functions";
 import { formatDistanceToNow } from "date-fns";
 
 export const Route = createFileRoute("/_authenticated/admin")({ component: AdminPage });
@@ -31,8 +32,9 @@ function AdminPage() {
         <p className="mt-1 text-sm text-muted-foreground">Voer uitslagen in, beheer deelnemers en vergrendel wedstrijden.</p>
       </header>
       <Tabs defaultValue="sync" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="sync">API Sync</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="sync">Sync</TabsTrigger>
+          <TabsTrigger value="emails">E-mails</TabsTrigger>
           <TabsTrigger value="results">Uitslagen</TabsTrigger>
           <TabsTrigger value="bonus">Bonus</TabsTrigger>
           <TabsTrigger value="users">Deelnemers</TabsTrigger>
