@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/lib/auth";
@@ -8,7 +8,7 @@ import { formatDateTime, timeUntil } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { Lock, Save } from "lucide-react";
+import { Lock, Save, Star, Trophy } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/prono")({ component: PronoPage });
 
