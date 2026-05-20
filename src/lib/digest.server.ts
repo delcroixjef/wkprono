@@ -1,11 +1,13 @@
-// Server-only: dagelijkse e-mail digest via Resend.
+// Server-only: dagelijkse e-mail digest via Lovable Emails queue.
 // Bepaalt "gisteren" in Europe/Brussels, verzamelt uitslagen + punten per deelnemer,
-// stuurt mail en logt elke run.
+// enqueued mail naar de transactional_emails queue en logt elke run.
 
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const TZ = "Europe/Brussels";
 const APP_URL = "https://wkprono.lovable.app";
+const SENDER_DOMAIN = "notify.welzeker.be";
+const FROM_ADDRESS = `WelZeker WK Prono <prono@${SENDER_DOMAIN}>`;
 
 function ymdInTZ(d: Date): { y: number; m: number; day: number } {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -169,16 +171,34 @@ function renderEmail(opts: {
   return { subject, html, text };
 }
 
-async function sendOne(opts: { from: string; to: string; subject: string; html: string; text: string; apiKey: string }) {
-  const r = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: { "Authorization": `Bearer ${opts.apiKey}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ from: opts.from, to: [opts.to], subject: opts.subject, html: opts.html, text: opts.text }),
+async function enqueueOne(opts: { to: string; subject: string; html: string; text: string; runId: string }) {
+  const messageId = crypto.randomUUID();
+  const payload = {
+    run_id: opts.runId,
+    to: opts.to,
+    from: FROM_ADDRESS,
+    sender_domain: SENDER_DOMAIN,
+    subject: opts.subject,
+    html: opts.html,
+    text: opts.text,
+    purpose: "transactional",
+    label: "daily_digest",
+    idempotency_key: `digest-${opts.runId}-${opts.to}`,
+    message_id: messageId,
+    queued_at: new Date().toISOString(),
+  };
+  const { error } = await supabaseAdmin.rpc("enqueue_email", {
+    queue_name: "transactional_emails",
+    payload: payload as any,
   });
-  if (!r.ok) {
-    const body = await r.text().catch(() => "");
-    throw new Error(`Resend ${r.status}: ${body.slice(0, 200)}`);
-  }
+  if (error) throw new Error(error.message);
+
+  await supabaseAdmin.from("email_send_log").insert({
+    message_id: messageId,
+    template_name: "daily_digest",
+    recipient_email: opts.to,
+    status: "pending",
+  });
 }
 
 export type DigestResult = {
@@ -198,12 +218,7 @@ async function logRun(r: DigestResult): Promise<void> {
 
 export async function runDailyDigest(opts: { onlyTo?: string } = {}): Promise<DigestResult> {
   const t0 = Date.now();
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM;
-  if (!apiKey || !from) {
-    const r: DigestResult = { status: "error", message: "RESEND_API_KEY of EMAIL_FROM ontbreekt", recipients_count: 0, matches_count: 0, duration_ms: Date.now() - t0 };
-    await logRun(r).catch(() => {}); return r;
-  }
+  const runId = crypto.randomUUID();
 
   const { startISO, endISO, label } = yesterdayWindow();
   const { data: matchesRaw, error: mErr } = await supabaseAdmin
@@ -252,24 +267,24 @@ export async function runDailyDigest(opts: { onlyTo?: string } = {}): Promise<Di
     list.push(p); predsByUser.set(p.user_id, list);
   });
 
-  let sent = 0; const errors: string[] = [];
+  let queued = 0; const errors: string[] = [];
   for (const profile of recipients) {
     try {
       const { subject, html, text } = renderEmail({
         profile, matches, standings, label,
         preds: predsByUser.get(profile.id) ?? [],
       });
-      await sendOne({ from, to: profile.email, subject, html, text, apiKey });
-      sent++;
+      await enqueueOne({ to: profile.email, subject, html, text, runId });
+      queued++;
     } catch (e: any) {
       errors.push(`${profile.email}: ${e?.message ?? e}`);
     }
   }
 
-  const status: DigestResult["status"] = sent > 0 ? "ok" : "error";
+  const status: DigestResult["status"] = queued > 0 ? "ok" : "error";
   const message = errors.length
-    ? `${sent}/${recipients.length} verstuurd. Fouten: ${errors.slice(0, 3).join(" | ")}${errors.length > 3 ? ` (+${errors.length - 3} meer)` : ""}`
-    : `${sent} mails verstuurd voor ${matches.length} wedstrijden (${label}).`;
-  const r: DigestResult = { status, message, recipients_count: sent, matches_count: matches.length, duration_ms: Date.now() - t0 };
+    ? `${queued}/${recipients.length} in wachtrij. Fouten: ${errors.slice(0, 3).join(" | ")}${errors.length > 3 ? ` (+${errors.length - 3} meer)` : ""}`
+    : `${queued} mails in wachtrij voor ${matches.length} wedstrijden (${label}).`;
+  const r: DigestResult = { status, message, recipients_count: queued, matches_count: matches.length, duration_ms: Date.now() - t0 };
   await logRun(r); return r;
 }
