@@ -20,6 +20,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedConfirmProfileRouteImport } from './routes/_authenticated/confirm-profile'
 import { Route as AuthenticatedBonusRouteImport } from './routes/_authenticated/bonus'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicHooksSyncResultsRouteImport } from './routes/api/public/hooks/sync-results'
 import { Route as ApiPublicHooksSendDailyDigestRouteImport } from './routes/api/public/hooks/send-daily-digest'
 
@@ -79,6 +80,12 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksSyncResultsRoute =
   ApiPublicHooksSyncResultsRouteImport.update({
     id: '/api/public/hooks/sync-results',
@@ -105,6 +112,7 @@ export interface FileRoutesByFullPath {
   '/wedstrijden': typeof AuthenticatedWedstrijdenRoute
   '/api/public/hooks/send-daily-digest': typeof ApiPublicHooksSendDailyDigestRoute
   '/api/public/hooks/sync-results': typeof ApiPublicHooksSyncResultsRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -119,6 +127,7 @@ export interface FileRoutesByTo {
   '/wedstrijden': typeof AuthenticatedWedstrijdenRoute
   '/api/public/hooks/send-daily-digest': typeof ApiPublicHooksSendDailyDigestRoute
   '/api/public/hooks/sync-results': typeof ApiPublicHooksSyncResultsRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -135,6 +144,7 @@ export interface FileRoutesById {
   '/_authenticated/wedstrijden': typeof AuthenticatedWedstrijdenRoute
   '/api/public/hooks/send-daily-digest': typeof ApiPublicHooksSendDailyDigestRoute
   '/api/public/hooks/sync-results': typeof ApiPublicHooksSyncResultsRoute
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/wedstrijden'
     | '/api/public/hooks/send-daily-digest'
     | '/api/public/hooks/sync-results'
+    | '/lovable/email/queue/process'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -165,6 +176,7 @@ export interface FileRouteTypes {
     | '/wedstrijden'
     | '/api/public/hooks/send-daily-digest'
     | '/api/public/hooks/sync-results'
+    | '/lovable/email/queue/process'
   id:
     | '__root__'
     | '/'
@@ -180,6 +192,7 @@ export interface FileRouteTypes {
     | '/_authenticated/wedstrijden'
     | '/api/public/hooks/send-daily-digest'
     | '/api/public/hooks/sync-results'
+    | '/lovable/email/queue/process'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -188,6 +201,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   ApiPublicHooksSendDailyDigestRoute: typeof ApiPublicHooksSendDailyDigestRoute
   ApiPublicHooksSyncResultsRoute: typeof ApiPublicHooksSyncResultsRoute
+  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -269,6 +283,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/sync-results': {
       id: '/api/public/hooks/sync-results'
       path: '/api/public/hooks/sync-results'
@@ -318,7 +339,18 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   ApiPublicHooksSendDailyDigestRoute: ApiPublicHooksSendDailyDigestRoute,
   ApiPublicHooksSyncResultsRoute: ApiPublicHooksSyncResultsRoute,
+  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
