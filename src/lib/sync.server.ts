@@ -1,6 +1,6 @@
-// Server-only: openfootball sync engine.
-// Fetches https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json
-// and updates matches, locks pre-kickoff games, and recomputes bonus stats + points.
+// Server-only: openfootball sync engine — robust version.
+// Primary join: match_number (openfootball "num"). Fallback: team names.
+// Detects score changes via last_synced_score and respects manual overrides.
 
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { TOP_10_FAVORITES } from "./teams";
@@ -8,65 +8,35 @@ import { TOP_10_FAVORITES } from "./teams";
 const DATA_URL =
   "https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json";
 
-// openfootball (English) → our DB (Dutch with diacritics)
 const TEAM_MAP: Record<string, string> = {
-  "Mexico": "Mexico",
-  "South Africa": "Zuid-Afrika",
-  "South Korea": "Rep. Korea",
-  "Korea Republic": "Rep. Korea",
-  "Czech Republic": "Tsjechië",
-  "Czechia": "Tsjechië",
+  "Mexico": "Mexico", "South Africa": "Zuid-Afrika",
+  "South Korea": "Rep. Korea", "Korea Republic": "Rep. Korea",
+  "Czech Republic": "Tsjechië", "Czechia": "Tsjechië",
   "Canada": "Canada",
-  "Bosnia and Herzegovina": "Bosnië/Herzeg.",
-  "Bosnia-Herzegovina": "Bosnië/Herzeg.",
-  "Qatar": "Qatar",
-  "Switzerland": "Zwitserland",
-  "USA": "USA",
-  "United States": "USA",
-  "Paraguay": "Paraguay",
-  "Haiti": "Haïti",
-  "Scotland": "Schotland",
-  "Australia": "Australië",
-  "Turkey": "Turkije",
-  "Türkiye": "Turkije",
-  "Brazil": "Brazilië",
-  "Morocco": "Marokko",
-  "Ivory Coast": "Ivoorkust",
-  "Côte d'Ivoire": "Ivoorkust",
-  "Ecuador": "Ecuador",
-  "Germany": "Duitsland",
-  "Curacao": "Curacao",
-  "Curaçao": "Curacao",
-  "Netherlands": "Nederland",
-  "Japan": "Japan",
-  "Sweden": "Zweden",
-  "Tunisia": "Tunesië",
-  "Saudi Arabia": "Saoedi-Arabië",
-  "Uruguay": "Uruguay",
-  "Spain": "Spanje",
+  "Bosnia and Herzegovina": "Bosnië/Herzeg.", "Bosnia-Herzegovina": "Bosnië/Herzeg.",
+  "Qatar": "Qatar", "Switzerland": "Zwitserland",
+  "USA": "USA", "United States": "USA",
+  "Paraguay": "Paraguay", "Haiti": "Haïti", "Scotland": "Schotland",
+  "Australia": "Australië", "Turkey": "Turkije", "Türkiye": "Turkije",
+  "Brazil": "Brazilië", "Morocco": "Marokko",
+  "Ivory Coast": "Ivoorkust", "Côte d'Ivoire": "Ivoorkust",
+  "Ecuador": "Ecuador", "Germany": "Duitsland",
+  "Curacao": "Curacao", "Curaçao": "Curacao",
+  "Netherlands": "Nederland", "Japan": "Japan", "Sweden": "Zweden",
+  "Tunisia": "Tunesië", "Saudi Arabia": "Saoedi-Arabië",
+  "Uruguay": "Uruguay", "Spain": "Spanje",
   "Cape Verde": "Kaapverdië",
-  "Iran": "IR Iran",
-  "IR Iran": "IR Iran",
-  "New Zealand": "Nieuw-Zeeland",
-  "Belgium": "België",
-  "Egypt": "Egypte",
-  "France": "Frankrijk",
-  "Senegal": "Senegal",
-  "Iraq": "Irak",
-  "Norway": "Noorwegen",
-  "Argentina": "Argentinië",
-  "Algeria": "Algerije",
-  "Austria": "Oostenrijk",
-  "Jordan": "Jordanië",
-  "Ghana": "Ghana",
-  "Panama": "Panama",
-  "England": "Engeland",
-  "Croatia": "Kroatië",
+  "Iran": "IR Iran", "IR Iran": "IR Iran",
+  "New Zealand": "Nieuw-Zeeland", "Belgium": "België",
+  "Egypt": "Egypte", "France": "Frankrijk", "Senegal": "Senegal",
+  "Iraq": "Irak", "Norway": "Noorwegen",
+  "Argentina": "Argentinië", "Algeria": "Algerije",
+  "Austria": "Oostenrijk", "Jordan": "Jordanië",
+  "Ghana": "Ghana", "Panama": "Panama",
+  "England": "Engeland", "Croatia": "Kroatië",
   "Portugal": "Portugal",
-  "DR Congo": "DR Congo",
-  "Congo DR": "DR Congo",
-  "Uzbekistan": "Oezbekistan",
-  "Colombia": "Colombia",
+  "DR Congo": "DR Congo", "Congo DR": "DR Congo",
+  "Uzbekistan": "Oezbekistan", "Colombia": "Colombia",
 };
 
 function mapTeam(name?: string | null): string | null {
@@ -74,21 +44,11 @@ function mapTeam(name?: string | null): string | null {
   return TEAM_MAP[name.trim()] ?? name.trim();
 }
 
-type OFGoal = {
-  name?: string;
-  minute?: number;
-  score1?: number;
-  score2?: number;
-  penalty?: boolean;
-  owngoal?: boolean;
-};
+type OFGoal = { name?: string; minute?: number; penalty?: boolean; owngoal?: boolean };
 type OFMatch = {
   num?: number;
-  date?: string;
-  time?: string;
-  group?: string;
-  team1?: { name?: string; code?: string } | string;
-  team2?: { name?: string; code?: string } | string;
+  team1?: { name?: string } | string;
+  team2?: { name?: string } | string;
   score?: { ft?: [number, number]; ht?: [number, number]; et?: [number, number]; p?: [number, number] };
   goals1?: OFGoal[];
   goals2?: OFGoal[];
@@ -100,7 +60,7 @@ function teamName(t: OFMatch["team1"]): string | undefined {
 }
 
 export type SyncResult = {
-  status: "ok" | "error" | "skipped";
+  status: "ok" | "error";
   message?: string;
   matchesUpdated: number;
   matchesLocked: number;
@@ -115,67 +75,80 @@ export async function runSync(): Promise<SyncResult> {
   let matchesLocked = 0;
 
   try {
-    // 1. Fetch openfootball data
     apiCalls++;
     const res = await fetch(DATA_URL, { headers: { "user-agent": "wk2026-prono" } });
     if (!res.ok) {
-      const result: SyncResult = {
-        status: "error",
-        message: `Openfootball fetch failed: HTTP ${res.status}`,
-        matchesUpdated: 0,
-        matchesLocked: 0,
-        apiCallsUsed: apiCalls,
-        durationMs: Date.now() - t0,
+      const r: SyncResult = {
+        status: "error", message: `Openfootball fetch faalde: HTTP ${res.status}`,
+        matchesUpdated: 0, matchesLocked: 0, apiCallsUsed: apiCalls, durationMs: Date.now() - t0,
       };
-      await logSync(result);
-      return result;
+      await logSync(r); return r;
     }
     const data = (await res.json()) as OFData;
     const ofMatches = data.matches ?? [];
 
-    // 2. Load our matches
     const { data: dbMatches, error } = await supabaseAdmin
       .from("matches")
-      .select("id,match_number,home_team,away_team,match_date,actual_home_score,actual_away_score,is_locked,phase");
+      .select("id,match_number,home_team,away_team,match_date,actual_home_score,actual_away_score,is_locked,phase,source,auto_sync_override,last_synced_score");
     if (error) throw error;
 
+    const byNumber = new Map<number, typeof dbMatches[number]>();
     const byTeams = new Map<string, typeof dbMatches[number]>();
     for (const m of dbMatches ?? []) {
+      byNumber.set(m.match_number, m);
       byTeams.set(`${m.home_team}::${m.away_team}`, m);
     }
 
     const nowMs = Date.now();
-    const lockBuffer = 30 * 60 * 1000; // 30 min before kickoff
+    const lockBuffer = 30 * 60 * 1000;
 
-    // 3. Iterate and update
     for (const of of ofMatches) {
-      const home = mapTeam(teamName(of.team1));
-      const away = mapTeam(teamName(of.team2));
-      if (!home || !away) continue;
-      const dbMatch = byTeams.get(`${home}::${away}`);
-      if (!dbMatch) continue; // unmapped or knockout placeholder
+      // Primary: match_number
+      let dbMatch = of.num ? byNumber.get(of.num) ?? null : null;
+      // Fallback: team-name pair
+      if (!dbMatch) {
+        const home = mapTeam(teamName(of.team1));
+        const away = mapTeam(teamName(of.team2));
+        if (home && away) dbMatch = byTeams.get(`${home}::${away}`) ?? null;
+      }
+      if (!dbMatch) continue;
 
       const ft = of.score?.ft;
-      if (ft && (dbMatch.actual_home_score === null || dbMatch.actual_away_score === null)) {
-        const { error: upErr } = await supabaseAdmin
-          .from("matches")
-          .update({
-            actual_home_score: ft[0],
-            actual_away_score: ft[1],
-            is_locked: true,
-          })
-          .eq("id", dbMatch.id);
-        if (upErr) {
-          console.error("[sync] match update failed", dbMatch.id, upErr);
-          continue;
-        }
-        matchesUpdated++;
-        const { error: rpcErr } = await supabaseAdmin.rpc("calculate_match_points", {
-          _match_id: dbMatch.id,
-        });
-        if (rpcErr) console.error("[sync] calc points failed", dbMatch.id, rpcErr);
+      const isLockedManual = dbMatch.source === "manual" || dbMatch.source === "corrected";
+      const canOverwrite = !isLockedManual || dbMatch.auto_sync_override;
 
-        // store match stats (cards rarely present in openfootball, leave 0)
+      // Update score if changed (or first time) — only when allowed
+      if (ft) {
+        const newScore = { h: ft[0], a: ft[1] };
+        const oldSynced = (dbMatch.last_synced_score as { h: number; a: number } | null) ?? null;
+        const externalChanged = !oldSynced || oldSynced.h !== ft[0] || oldSynced.a !== ft[1];
+        const currentDiffers =
+          dbMatch.actual_home_score !== ft[0] || dbMatch.actual_away_score !== ft[1];
+
+        if (externalChanged && currentDiffers && canOverwrite) {
+          const { error: upErr } = await supabaseAdmin
+            .from("matches")
+            .update({
+              actual_home_score: ft[0],
+              actual_away_score: ft[1],
+              is_locked: true,
+              source: dbMatch.source === "manual" ? "corrected" : "auto",
+              last_synced_at: new Date().toISOString(),
+              last_synced_score: newScore,
+            })
+            .eq("id", dbMatch.id);
+          if (upErr) { console.error("[sync] update faalde", dbMatch.id, upErr); continue; }
+          matchesUpdated++;
+          // Trigger handles recalc, but call explicitly to be safe.
+          await supabaseAdmin.rpc("calculate_match_points", { _match_id: dbMatch.id });
+        } else if (externalChanged && !canOverwrite) {
+          // Track external knowledge without overwriting.
+          await supabaseAdmin.from("matches")
+            .update({ last_synced_score: newScore, last_synced_at: new Date().toISOString() })
+            .eq("id", dbMatch.id);
+        }
+
+        // Stats (goalscorers etc.)
         const goalsHome = (of.goals1 ?? []).map((g) => ({
           player: g.name, minute: g.minute, penalty: !!g.penalty, owngoal: !!g.owngoal,
         }));
@@ -185,10 +158,8 @@ export async function runSync(): Promise<SyncResult> {
         await supabaseAdmin.from("match_stats").upsert({
           match_id: dbMatch.id,
           api_fixture_id: of.num ?? null,
-          home_yellow_cards: 0,
-          away_yellow_cards: 0,
-          home_red_cards: 0,
-          away_red_cards: 0,
+          home_yellow_cards: 0, away_yellow_cards: 0,
+          home_red_cards: 0, away_red_cards: 0,
           home_goals_detail: goalsHome,
           away_goals_detail: goalsAway,
           penalties_in_match: !!of.score?.p,
@@ -196,7 +167,7 @@ export async function runSync(): Promise<SyncResult> {
         }, { onConflict: "match_id" });
       }
 
-      // pre-kickoff lock
+      // Pre-kickoff lock
       if (!dbMatch.is_locked && !ft) {
         const kickoff = new Date(dbMatch.match_date).getTime();
         if (kickoff - nowMs <= lockBuffer) {
@@ -206,33 +177,21 @@ export async function runSync(): Promise<SyncResult> {
       }
     }
 
-    // 4. Bonus stats (recompute from all completed matches)
     await recomputeBonusStats(ofMatches);
-
-    // 5. Recompute bonus points for all users
     await recomputeAllBonusPoints();
 
-    const result: SyncResult = {
+    const r: SyncResult = {
       status: "ok",
-      message: `Synced ${matchesUpdated} results, locked ${matchesLocked} upcoming.`,
-      matchesUpdated,
-      matchesLocked,
-      apiCallsUsed: apiCalls,
-      durationMs: Date.now() - t0,
+      message: `${matchesUpdated} uitslagen gesynchroniseerd, ${matchesLocked} vergrendeld.`,
+      matchesUpdated, matchesLocked, apiCallsUsed: apiCalls, durationMs: Date.now() - t0,
     };
-    await logSync(result);
-    return result;
+    await logSync(r); return r;
   } catch (e: any) {
-    const result: SyncResult = {
-      status: "error",
-      message: e?.message ?? String(e),
-      matchesUpdated,
-      matchesLocked,
-      apiCallsUsed: apiCalls,
-      durationMs: Date.now() - t0,
+    const r: SyncResult = {
+      status: "error", message: e?.message ?? String(e),
+      matchesUpdated, matchesLocked, apiCallsUsed: apiCalls, durationMs: Date.now() - t0,
     };
-    await logSync(result);
-    return result;
+    await logSync(r); return r;
   }
 }
 
@@ -246,28 +205,18 @@ async function logSync(r: SyncResult) {
       api_calls_used: r.apiCallsUsed,
       duration_ms: r.durationMs,
     });
-    // trim to last 50
     const { data: keep } = await supabaseAdmin
-      .from("sync_log").select("id").order("ran_at", { ascending: false }).limit(50);
+      .from("sync_log").select("id,ran_at").order("ran_at", { ascending: false }).limit(50);
     if (keep && keep.length === 50) {
-      const cutoffId = keep[keep.length - 1]?.id;
-      if (cutoffId) {
-        const { data: cutoffRow } = await supabaseAdmin
-          .from("sync_log").select("ran_at").eq("id", cutoffId).maybeSingle();
-        if (cutoffRow?.ran_at) {
-          await supabaseAdmin.from("sync_log").delete().lt("ran_at", cutoffRow.ran_at);
-        }
-      }
+      const cutoff = keep[keep.length - 1]?.ran_at;
+      if (cutoff) await supabaseAdmin.from("sync_log").delete().lt("ran_at", cutoff);
     }
-  } catch (e) { console.error("[sync] log failed", e); }
+  } catch (e) { console.error("[sync] log faalde", e); }
 }
 
 async function recomputeBonusStats(ofMatches: OFMatch[]) {
-  // Topscorer per country (max goals by a single player, grouped by player's team)
   const goalsByPlayer = new Map<string, { country: string; goals: number }>();
-  // Clean sheets per country
   const cleanSheetByCountry = new Map<string, number>();
-  // Goals per country (aggregate for display)
   const goalsByCountry = new Map<string, number>();
 
   for (const of of ofMatches) {
@@ -280,10 +229,7 @@ async function recomputeBonusStats(ofMatches: OFMatch[]) {
     if (ft[0] === 0) cleanSheetByCountry.set(away, (cleanSheetByCountry.get(away) ?? 0) + 1);
 
     for (const g of of.goals1 ?? []) {
-      if (g.owngoal) {
-        goalsByCountry.set(away, (goalsByCountry.get(away) ?? 0) + 1);
-        continue;
-      }
+      if (g.owngoal) { goalsByCountry.set(away, (goalsByCountry.get(away) ?? 0) + 1); continue; }
       goalsByCountry.set(home, (goalsByCountry.get(home) ?? 0) + 1);
       if (!g.name) continue;
       const key = `${home}::${g.name}`;
@@ -291,10 +237,7 @@ async function recomputeBonusStats(ofMatches: OFMatch[]) {
       goalsByPlayer.set(key, { country: home, goals: (prev?.goals ?? 0) + 1 });
     }
     for (const g of of.goals2 ?? []) {
-      if (g.owngoal) {
-        goalsByCountry.set(home, (goalsByCountry.get(home) ?? 0) + 1);
-        continue;
-      }
+      if (g.owngoal) { goalsByCountry.set(home, (goalsByCountry.get(home) ?? 0) + 1); continue; }
       goalsByCountry.set(away, (goalsByCountry.get(away) ?? 0) + 1);
       if (!g.name) continue;
       const key = `${away}::${g.name}`;
@@ -303,29 +246,17 @@ async function recomputeBonusStats(ofMatches: OFMatch[]) {
     }
   }
 
-  // Topscorer countries (countries of all players tied for most goals)
   let maxGoals = 0;
   for (const v of goalsByPlayer.values()) if (v.goals > maxGoals) maxGoals = v.goals;
   const topscorerCountries = new Set<string>();
-  if (maxGoals > 0) {
-    for (const v of goalsByPlayer.values()) if (v.goals === maxGoals) topscorerCountries.add(v.country);
-  }
+  if (maxGoals > 0) for (const v of goalsByPlayer.values()) if (v.goals === maxGoals) topscorerCountries.add(v.country);
 
-  // Clean sheet leaders (tied at the top)
   let maxCs = 0;
   for (const n of cleanSheetByCountry.values()) if (n > maxCs) maxCs = n;
   const cleanSheetCountries: string[] = [];
-  if (maxCs > 0) {
-    for (const [c, n] of cleanSheetByCountry.entries()) if (n === maxCs) cleanSheetCountries.push(c);
-  }
+  if (maxCs > 0) for (const [c, n] of cleanSheetByCountry.entries()) if (n === maxCs) cleanSheetCountries.push(c);
 
-  // Early-exit top-10: only when all 72 group matches have a score
-  const earlyExit = await computeEarlyExit(ofMatches);
-
-  // Red card final + final result snapshot: read from matches table
-  const { data: final } = await supabaseAdmin
-    .from("matches").select("actual_home_score,actual_away_score").eq("match_number", 104).maybeSingle();
-  const finalPlayed = !!final && final.actual_home_score !== null;
+  const earlyExit = await computeEarlyExit();
 
   await supabaseAdmin.from("bonus_tournament_stats").update({
     goals_by_country: Object.fromEntries(goalsByCountry),
@@ -334,22 +265,17 @@ async function recomputeBonusStats(ofMatches: OFMatch[]) {
     clean_sheet_leader_count: maxCs,
     clean_sheet_countries: cleanSheetCountries,
     top10_eliminated_in_groups: earlyExit,
-    // final_had_red_card: left for admin to set manually (openfootball lacks card data)
     updated_at: new Date().toISOString(),
   }).eq("singleton", true);
-
-  return { finalPlayed };
 }
 
-async function computeEarlyExit(ofMatches: OFMatch[]): Promise<string | null> {
-  // Need all 72 group matches played
+async function computeEarlyExit(): Promise<string | null> {
   const { data: groupRows } = await supabaseAdmin
     .from("matches").select("home_team,away_team,actual_home_score,actual_away_score,group_code")
     .eq("phase", "groepsfase");
   if (!groupRows || groupRows.length < 72) return null;
   if (groupRows.some((r) => r.actual_home_score === null)) return null;
 
-  // Build standings per group
   type Row = { team: string; pts: number; gd: number; gf: number };
   const groups = new Map<string, Map<string, Row>>();
   for (const m of groupRows) {
@@ -366,7 +292,6 @@ async function computeEarlyExit(ofMatches: OFMatch[]): Promise<string | null> {
     else { h.pts += 1; a.pts += 1; }
   }
 
-  // Top-2 per group always advance; best 8 of the 12 third-placed teams advance.
   const advanced = new Set<string>();
   const thirds: Row[] = [];
   for (const [, g] of groups) {
@@ -378,10 +303,9 @@ async function computeEarlyExit(ofMatches: OFMatch[]): Promise<string | null> {
   thirds.sort((x, y) => y.pts - x.pts || y.gd - x.gd || y.gf - x.gf);
   for (let i = 0; i < Math.min(8, thirds.length); i++) advanced.add(thirds[i].team);
 
-  // Top-10 favourite that didn't advance
   const eliminated = TOP_10_FAVORITES.filter((t) => !advanced.has(t));
   if (eliminated.length === 0) return "geen";
-  return eliminated[0]; // first (most-favoured) eliminated
+  return eliminated[0];
 }
 
 async function recomputeAllBonusPoints() {
@@ -394,9 +318,7 @@ async function recomputeAllBonusPoints() {
   const finalPlayed = !!final && final.actual_home_score !== null;
 
   for (const p of preds) {
-    const breakdown: Record<string, number> = {
-      topscorer: 0, clean_sheet: 0, early_exit: 0, final_score: 0,
-    };
+    const breakdown: Record<string, number> = { topscorer: 0, clean_sheet: 0, early_exit: 0, final_score: 0 };
     if (p.topscorer_country && stats.topscorer_countries?.includes(p.topscorer_country)) breakdown.topscorer = 5;
     if (p.clean_sheet_country && stats.clean_sheet_countries?.includes(p.clean_sheet_country)) breakdown.clean_sheet = 5;
     if (p.early_exit_country && stats.top10_eliminated_in_groups && p.early_exit_country === stats.top10_eliminated_in_groups) breakdown.early_exit = 8;
@@ -407,9 +329,7 @@ async function recomputeAllBonusPoints() {
     }
     const total = Object.values(breakdown).reduce((s, v) => s + v, 0);
     await supabaseAdmin.from("bonus_points").upsert({
-      user_id: p.user_id,
-      points: total,
-      breakdown,
+      user_id: p.user_id, points: total, breakdown,
       updated_at: new Date().toISOString(),
     }, { onConflict: "user_id" });
   }

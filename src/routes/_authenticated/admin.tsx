@@ -246,8 +246,20 @@ function SyncTab() {
     queryFn: async () => (await supabase.from("sync_log").select("*").order("ran_at", { ascending: false }).limit(10)).data ?? [],
     refetchInterval: 15000,
   });
+  const lastOk = logs?.find((l) => l.status === "ok");
+  const lastErr = logs?.find((l) => l.status === "error");
   const last = logs?.[0];
-  const lastOk = last?.status === "ok";
+
+  const cronWindows = [{ h: 20, m: 0 }, { h: 22, m: 30 }, { h: 1, m: 0 }, { h: 3, m: 30 }, { h: 6, m: 30 }];
+  const nextRun = (() => {
+    const now = new Date();
+    const list = cronWindows.map(({ h, m }) => {
+      const d = new Date(now); d.setHours(h, m, 0, 0);
+      if (d.getTime() <= now.getTime()) d.setDate(d.getDate() + 1);
+      return d;
+    }).sort((a, b) => a.getTime() - b.getTime());
+    return list[0];
+  })();
 
   async function run() {
     setBusy(true);
@@ -259,52 +271,56 @@ function SyncTab() {
       qc.invalidateQueries({ queryKey: ["admin-matches"] });
     } catch (e: any) {
       toast.error(e?.message ?? "Sync mislukt");
-    } finally {
-      setBusy(false);
-    }
+    } finally { setBusy(false); }
   }
 
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://wkprono.lovable.app";
+  const cronUrl = `${baseUrl}/api/public/hooks/sync-results?secret=YOUR_SYNC_SECRET`;
+
   return (
-    <div className="space-y-4">
-      <div className="rounded-2xl border border-border bg-surface p-4">
+    <div className="space-y-3">
+      <div className="rounded-lg border border-border bg-surface p-4">
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              {last ? (
-                lastOk
-                  ? <CheckCircle2 className="h-5 w-5 text-emerald-500" />
-                  : <AlertCircle className="h-5 w-5 text-destructive" />
-              ) : <RefreshCw className="h-5 w-5 text-muted-foreground" />}
+              {last ? (last.status === "ok"
+                ? <CheckCircle2 className="h-5 w-5 text-success" />
+                : <AlertCircle className="h-5 w-5 text-destructive" />)
+                : <RefreshCw className="h-5 w-5 text-muted-foreground" />}
               <h2 className="text-base font-semibold text-foreground">Automatische sync</h2>
             </div>
-            <p className="mt-1 text-xs text-muted-foreground">
-              Bron: openfootball/worldcup.json (publieke GitHub, geen API key nodig).
-              Cron draait elke 30 minuten tijdens het toernooi (11 jun – 19 jul 2026).
-            </p>
-            {last && (
-              <p className="mt-2 text-xs text-muted-foreground">
-                Laatste run: <span className="font-medium text-foreground">
-                  {formatDistanceToNow(new Date(last.ran_at), { addSuffix: true })}
-                </span> — {last.message ?? last.status}
-              </p>
-            )}
+            <p className="mt-1 text-xs text-muted-foreground">Bron: openfootball/worldcup.json (publiek, geen API-key).</p>
           </div>
           <Button onClick={run} disabled={busy}>
             <RefreshCw className={`mr-2 h-4 w-4 ${busy ? "animate-spin" : ""}`} />
-            {busy ? "Bezig…" : "Forceer sync"}
+            {busy ? "Bezig…" : "Sync nu"}
           </Button>
+        </div>
+
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-3 gap-2">
+          <Tile label="Laatste succes" value={lastOk ? formatDistanceToNow(new Date(lastOk.ran_at), { addSuffix: true }) : "—"} sub={lastOk ? `${lastOk.matches_updated} uitslagen` : ""} />
+          <Tile label="Laatste fout" value={lastErr ? formatDistanceToNow(new Date(lastErr.ran_at), { addSuffix: true }) : "—"} sub={lastErr?.message ?? ""} tone={lastErr ? "error" : undefined} />
+          <Tile label="Volgende verwacht" value={nextRun.toLocaleString("nl-BE", { hour: "2-digit", minute: "2-digit", weekday: "short" })} sub="Europe/Brussels" />
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border bg-surface">
-        <div className="border-b border-border px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Laatste 10 sync events
-        </div>
+      <div className="rounded-lg border border-border bg-surface p-4">
+        <h3 className="text-sm font-semibold text-foreground">Externe cron-setup</h3>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Stel op <a className="text-primary hover:underline" href="https://cron-job.org" target="_blank" rel="noreferrer">cron-job.org</a> een job in die 5× per dag GET stuurt naar onderstaande URL.
+          Tijden (Brussels): 20:00, 22:30, 01:00, 03:30, 06:30.
+        </p>
+        <pre className="mt-2 overflow-x-auto rounded-md bg-muted px-3 py-2 text-[11px] text-foreground">{cronUrl}</pre>
+        <p className="mt-1 text-[11px] text-muted-foreground">Vervang <code>YOUR_SYNC_SECRET</code> door de SYNC_SECRET-waarde uit Lovable. Mag ook als <code>x-sync-secret</code> header.</p>
+      </div>
+
+      <div className="rounded-lg border border-border bg-surface">
+        <div className="border-b border-border px-4 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">Laatste 10 sync events</div>
         {isLoading ? <Skeleton className="h-40 m-3" /> : (
           <ul className="divide-y divide-border">
             {(logs ?? []).map((l) => (
               <li key={l.id} className="flex items-center gap-3 px-4 py-2.5 text-xs">
-                <span className={`h-2 w-2 rounded-full ${l.status === "ok" ? "bg-emerald-500" : l.status === "error" ? "bg-destructive" : "bg-muted-foreground"}`} />
+                <span className={`h-2 w-2 rounded-full ${l.status === "ok" ? "bg-success" : l.status === "error" ? "bg-destructive" : "bg-muted-foreground"}`} />
                 <span className="w-32 shrink-0 text-muted-foreground">{new Date(l.ran_at).toLocaleString("nl-BE")}</span>
                 <span className="flex-1 truncate text-foreground">{l.message ?? l.status}</span>
                 <span className="text-muted-foreground">{l.matches_updated}↑ {l.matches_locked}🔒 · {l.duration_ms}ms</span>
@@ -316,6 +332,16 @@ function SyncTab() {
           </ul>
         )}
       </div>
+    </div>
+  );
+}
+
+function Tile({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: "error" }) {
+  return (
+    <div className={`rounded-md border p-2.5 ${tone === "error" ? "border-destructive/30 bg-destructive/5" : "border-border bg-background"}`}>
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="mt-0.5 text-sm font-semibold text-foreground">{value}</div>
+      {sub && <div className="mt-0.5 text-[11px] text-muted-foreground truncate">{sub}</div>}
     </div>
   );
 }

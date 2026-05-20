@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedWedstrijdenRouteImport } from './routes/_authenticated/wedstrijden'
 import { Route as AuthenticatedPronoRouteImport } from './routes/_authenticated/prono'
 import { Route as AuthenticatedKoSchemaRouteImport } from './routes/_authenticated/ko-schema'
 import { Route as AuthenticatedKlassementRouteImport } from './routes/_authenticated/klassement'
@@ -35,6 +36,12 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedWedstrijdenRoute =
+  AuthenticatedWedstrijdenRouteImport.update({
+    id: '/wedstrijden',
+    path: '/wedstrijden',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedPronoRoute = AuthenticatedPronoRouteImport.update({
   id: '/prono',
   path: '/prono',
@@ -88,6 +95,7 @@ export interface FileRoutesByFullPath {
   '/klassement': typeof AuthenticatedKlassementRoute
   '/ko-schema': typeof AuthenticatedKoSchemaRoute
   '/prono': typeof AuthenticatedPronoRoute
+  '/wedstrijden': typeof AuthenticatedWedstrijdenRoute
   '/api/public/hooks/sync-results': typeof ApiPublicHooksSyncResultsRoute
 }
 export interface FileRoutesByTo {
@@ -100,6 +108,7 @@ export interface FileRoutesByTo {
   '/klassement': typeof AuthenticatedKlassementRoute
   '/ko-schema': typeof AuthenticatedKoSchemaRoute
   '/prono': typeof AuthenticatedPronoRoute
+  '/wedstrijden': typeof AuthenticatedWedstrijdenRoute
   '/api/public/hooks/sync-results': typeof ApiPublicHooksSyncResultsRoute
 }
 export interface FileRoutesById {
@@ -114,6 +123,7 @@ export interface FileRoutesById {
   '/_authenticated/klassement': typeof AuthenticatedKlassementRoute
   '/_authenticated/ko-schema': typeof AuthenticatedKoSchemaRoute
   '/_authenticated/prono': typeof AuthenticatedPronoRoute
+  '/_authenticated/wedstrijden': typeof AuthenticatedWedstrijdenRoute
   '/api/public/hooks/sync-results': typeof ApiPublicHooksSyncResultsRoute
 }
 export interface FileRouteTypes {
@@ -128,6 +138,7 @@ export interface FileRouteTypes {
     | '/klassement'
     | '/ko-schema'
     | '/prono'
+    | '/wedstrijden'
     | '/api/public/hooks/sync-results'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -140,6 +151,7 @@ export interface FileRouteTypes {
     | '/klassement'
     | '/ko-schema'
     | '/prono'
+    | '/wedstrijden'
     | '/api/public/hooks/sync-results'
   id:
     | '__root__'
@@ -153,6 +165,7 @@ export interface FileRouteTypes {
     | '/_authenticated/klassement'
     | '/_authenticated/ko-schema'
     | '/_authenticated/prono'
+    | '/_authenticated/wedstrijden'
     | '/api/public/hooks/sync-results'
   fileRoutesById: FileRoutesById
 }
@@ -185,6 +198,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/wedstrijden': {
+      id: '/_authenticated/wedstrijden'
+      path: '/wedstrijden'
+      fullPath: '/wedstrijden'
+      preLoaderRoute: typeof AuthenticatedWedstrijdenRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/prono': {
       id: '/_authenticated/prono'
@@ -253,6 +273,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedKlassementRoute: typeof AuthenticatedKlassementRoute
   AuthenticatedKoSchemaRoute: typeof AuthenticatedKoSchemaRoute
   AuthenticatedPronoRoute: typeof AuthenticatedPronoRoute
+  AuthenticatedWedstrijdenRoute: typeof AuthenticatedWedstrijdenRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -263,6 +284,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedKlassementRoute: AuthenticatedKlassementRoute,
   AuthenticatedKoSchemaRoute: AuthenticatedKoSchemaRoute,
   AuthenticatedPronoRoute: AuthenticatedPronoRoute,
+  AuthenticatedWedstrijdenRoute: AuthenticatedWedstrijdenRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
@@ -278,13 +300,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
