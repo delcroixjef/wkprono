@@ -364,10 +364,17 @@ function EmailsTab() {
   const last = logs?.[0];
   const lastErr = logs?.find((l) => l.status === "error");
 
+  async function getToken() {
+    const { data } = await supabase.auth.getSession();
+    const t = data.session?.access_token;
+    if (!t) throw new Error("Niet ingelogd");
+    return t;
+  }
   async function doTest() {
     setBusy("test");
     try {
-      const r = await test({ data: {} });
+      const accessToken = await getToken();
+      const r = await test({ data: { accessToken } });
       if (r.status === "ok") toast.success(r.message);
       else if (r.status === "skipped") toast.message(r.message);
       else toast.error(r.message);
@@ -379,7 +386,8 @@ function EmailsTab() {
     if (!confirm("Digest nu versturen naar alle deelnemers?")) return;
     setBusy("run");
     try {
-      const r = await runNow();
+      const accessToken = await getToken();
+      const r = await runNow({ data: { accessToken } });
       if (r.status === "ok") toast.success(r.message);
       else if (r.status === "skipped") toast.message(r.message);
       else toast.error(r.message);
