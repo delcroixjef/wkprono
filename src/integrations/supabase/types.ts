@@ -589,6 +589,7 @@ export type Database = {
         Returns: number
       }
       is_admin: { Args: { _uid: string }; Returns: boolean }
+      matchday_deadline: { Args: { _match_id: string }; Returns: string }
       move_to_dlq: {
         Args: {
           dlq_name: string
