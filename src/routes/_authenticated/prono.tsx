@@ -199,7 +199,9 @@ function PredictionsBlock({ matches, preds, userId, onSaved }: { matches: Match[
             })}
           </ul>
         </div>
-      ))}
+        );
+      })}
+
       <div className="sticky bottom-16 z-10">
         <Button onClick={save} disabled={busy} className="w-full h-11 shadow-lg">
           <Save className="mr-2 h-4 w-4" />{busy ? "Opslaan…" : "Opslaan"}
