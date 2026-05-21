@@ -105,7 +105,7 @@ function BonusPage() {
 
 
       {/* Card 5 — Final exact score */}
-      <BonusCard color="purple" Icon={Trophy} points={15} title="Exacte eindstand finale" subtitle="Hoogste bonus — moeilijkste vraag. Beide teams + exacte score.">
+      <BonusCard color="purple" Icon={Trophy} points={15} title="Exacte eindstand finale" subtitle={"Hoogste bonus — moeilijkste vraag. Beide teams + exacte score (na 90min + eventuele verlengingen).\n\n+15 pt"}>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-[11px] uppercase tracking-wider text-muted-foreground">Thuis</label>
@@ -158,7 +158,7 @@ function BonusCard({ Icon, color, points, title, subtitle, children }: {
           <span className={`grid h-9 w-9 place-items-center rounded-lg ${c.bg} ${c.text}`}><Icon className="h-4.5 w-4.5" /></span>
           <div>
             <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-            <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground whitespace-pre-line">{subtitle}</p>
           </div>
         </div>
         <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${c.bg} ${c.text}`}>+{points} pt</span>
