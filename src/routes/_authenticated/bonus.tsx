@@ -105,7 +105,7 @@ function BonusPage() {
 
 
       {/* Card 5 — Final exact score */}
-      <BonusCard color="purple" Icon={Trophy} points={15} title="Exacte eindstand finale" subtitle="Hoogste bonus — moeilijkste vraag. Beide teams + exacte score.">
+      <BonusCard color="purple" Icon={Trophy} points={15} title="Exacte eindstand finale" subtitle={"Hoogste bonus — moeilijkste vraag. Beide teams + exacte score (na 90min + eventuele verlengingen).\n\n+15 pt"}>
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="text-[11px] uppercase tracking-wider text-muted-foreground">Thuis</label>
