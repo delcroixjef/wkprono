@@ -12,11 +12,9 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Lock, Unlock, Save, Calculator, RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
+import { Lock, Unlock, Save, Calculator } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { triggerSync } from "@/lib/sync.functions";
-import { sendDigestTest, sendDigestNow } from "@/lib/digest.functions";
-import { formatDistanceToNow } from "date-fns";
 
 export const Route = createFileRoute("/_authenticated/admin")({ component: AdminPage });
 
