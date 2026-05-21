@@ -187,14 +187,16 @@ export async function runSync(): Promise<SyncResult> {
         }, { onConflict: "match_id" });
       }
 
-      // Pre-kickoff lock
+      // Pre-kickoff lock: vergrendel zodra de speeldag-deadline (eerste match - 30 min) verstreken is
       if (!dbMatch.is_locked && !ft) {
-        const kickoff = new Date(dbMatch.match_date).getTime();
-        if (kickoff - nowMs <= lockBuffer) {
+        const firstKickoff = firstKickoffByDay.get(dayKey(dbMatch.match_date));
+        const deadline = (firstKickoff ?? new Date(dbMatch.match_date).getTime()) - lockBuffer;
+        if (nowMs >= deadline) {
           await supabaseAdmin.from("matches").update({ is_locked: true }).eq("id", dbMatch.id);
           matchesLocked++;
         }
       }
+
     }
 
     await recomputeBonusStats(ofMatches);
