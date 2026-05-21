@@ -158,7 +158,7 @@ function BonusCard({ Icon, color, points, title, subtitle, children }: {
           <span className={`grid h-9 w-9 place-items-center rounded-lg ${c.bg} ${c.text}`}><Icon className="h-4.5 w-4.5" /></span>
           <div>
             <h3 className="text-sm font-semibold text-foreground">{title}</h3>
-            <p className="mt-0.5 text-xs text-muted-foreground">{subtitle}</p>
+            <p className="mt-0.5 text-xs text-muted-foreground whitespace-pre-line">{subtitle}</p>
           </div>
         </div>
         <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${c.bg} ${c.text}`}>+{points} pt</span>
