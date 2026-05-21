@@ -1,90 +1,60 @@
-# WelZeker WK Prono — Optimalisatieplan
+## Vereenvoudigde puntentelling
 
-Een grote, samenhangende opkuis. Ik groepeer het werk in 7 blokken die overeenkomen met de prioriteiten. Alle wijzigingen blijven binnen de bestaande TanStack Start + Lovable Cloud opzet.
+Vervang de huidige 4-laagse scoring door één simpele regel per match:
 
-## 1. Robuuste automatische sync
+| Voorspelling | Punten |
+|---|---|
+| Exacte uitslag (bv. voorspeld 2-1, werd 2-1) | **5 pt** |
+| Juiste winnaar of gelijkspel (zonder exacte uitslag) | **3 pt** |
+| Fout | 0 pt |
 
-**Database (migratie):**
-- `matches.source` toevoegen: `text` met default `'auto'`, check waarden `auto|manual|corrected`
-- `matches.auto_sync_override` boolean default `true` — als `false` mag sync deze match niet overschrijven
-- `matches.last_synced_at`, `matches.last_synced_score` (jsonb) voor diff-detectie
-- `predictions.points_breakdown` jsonb (correct_outcome, correct_diff, exact_score, near_goals)
-- Functie `calculate_match_points` uitbreiden zodat ze de breakdown opslaat en idempotent is
-- Trigger op `matches` UPDATE → bij score-wijziging automatisch `calculate_match_points` aanroepen
-- Trigger op `predictions` INSERT/UPDATE: weiger als `match_date <= now()` of `is_locked = true` (server-side deadline lock)
+Bonusvragen blijven ongewijzigd: topscorer 5, clean sheets 5, vroege uitschakeling 8, finale exact 15.
 
-**Sync engine (`src/lib/sync.server.ts`):**
-- Koppeling primair op `match_number` (via openfootball `num`), fallback op teamnamen
-- Bij gewijzigde uitslag: update en herbereken (niet enkel bij eerste vulling)
-- Respecteer `source='manual'` + `auto_sync_override=false`
-- Detecteer wijziging via vergelijking met `last_synced_score`
-- Set `source='auto'` bij sync, log alles in `sync_log` met juiste velden
+### Waarom dit goed werkt
+- Eén zin uit te leggen in de handleiding
+- Nacontrole is triviaal (winnaar klopt → 3, klopt exact → 5)
+- Exacte voorspelling blijft het meeste waard, dus durven loont nog steeds
+- Bonusvragen krijgen relatief meer gewicht — past goed bij een speelse pool
 
-**Beveiliging endpoint:**
-- `/api/public/hooks/sync-results` verifieert `?secret=` query OF `x-sync-secret` header tegen `SYNC_SECRET` env var
-- Vraag secret aan via `secrets--add_secret`
+---
 
-## 2. Cron planning
+## Wat er wijzigt
 
-- pg_cron jobs op 20:00, 22:30, 01:00, 03:30, 06:30 Europe/Brussels → omzetten naar UTC (UTC+1 winter / UTC+2 zomer; WK 2026 = juni/juli = UTC+2, dus 18:00, 20:30, 23:00, 01:30, 04:30 UTC)
-- Roept `https://wkprono.lovable.app/api/public/hooks/sync-results?secret=...` aan
-- Admin tab toont: laatste succes, laatste fout, geplande volgende run (berekend uit cron schedule), aantal updates
+### 1. Database — `calculate_match_points` functie herschrijven
+De PL/pgSQL functie wordt drastisch korter:
+- weg: `diff_pts` (doelsaldo), `near_pts` (bijna-juist), bijbehorende berekeningen
+- behoud: exact-check → 5 pt, anders winner-check → 3 pt
+- `points_breakdown` jsonb wordt `{ exact: 0|5, outcome: 0|3 }` (alleen die 2 velden)
 
-## 3. Manueel adminwerk minimaliseren
+### 2. Bestaande data herberekenen
+Na de migratie wordt `recalculate_all_points()` aangeroepen zodat alle reeds gespeelde matches de nieuwe score-logica volgen. (Op dit moment normaal nog 0 matches gespeeld, dus geen impact — maar voor de zekerheid.)
 
-- Admin "Wedstrijden" tab: lijst met automatische uitslagen + badge `auto` / `handmatig` / `gecorrigeerd`
-- Aparte sectie "Handmatige correctie" (collapsible, secundair)
-- Bij manueel overschrijven: set `source='corrected'`, `auto_sync_override` toggle
-- Direct herberekenen via DB-trigger
+### 3. Frontend — breakdown-weergave
+Plaatsen waar `points_breakdown` getoond wordt (match-detail, klassement-popover, eventueel `/wedstrijden`) moeten enkel nog `exact` en `outcome` tonen. De keys `diff` en `near` worden niet meer gevuld.
 
-## 4. Puntentelling
+Bestanden om na te kijken & aanpassen:
+- `src/routes/_authenticated/prono.tsx`
+- `src/routes/_authenticated/klassement.tsx`
+- `src/routes/_authenticated/wedstrijden.tsx`
+- `src/routes/_authenticated/dashboard.tsx`
+- eventuele helper in `src/lib/format.ts`
 
-- Regels in DB-functie: 10 (exact), 5 (W/G/V), 5 (doelsaldo), 3 (bijna-juist drempel: |pred_total - act_total| ≤ 1 EN juiste richting)
-- `predictions.points_breakdown` jsonb met de 4 sub-punten
-- UI toont breakdown in match-detail en klassement-popover
+### 4. Handleiding (PDF)
+Aparte wijzigingsprompt voor jouw Codex-flow om pagina 7 te vervangen door de nieuwe simpele regel. Levert ik mee na implementatie.
 
-## 5. Lichte deelnamecontrole
+---
 
-- `ALLOWED_EMAIL_DOMAINS` env (csv, bv. `welzeker.be`) OF `JOIN_CODE` env
-- Login-form: valideer domein client-side + server-side via een nieuwe `validate_signin` server function
-- DB-trigger voor predictions deadline (zie blok 1)
+## Wat NIET wijzigt
+- Bonuspunten (topscorer/clean sheet/vroege uitschakeling/finale)
+- Sync-logica (verlengingen blijven meetellen, penalty's niet)
+- Deadline-regels (30 min vóór eerste match van de dag)
+- Auth, RLS, admin-pagina
 
-## 6. Look & feel
+---
 
-- `rounded-2xl` → `rounded-lg` over de hele app (find/replace per route)
-- Compactere cards: kleinere padding, subtielere borders
-- Encoding-fix: controle van alle .tsx bestanden op kapotte chars (`Ã©` etc.); `<meta charset="utf-8">` in `__root.tsx`
-- Score-input component met +/- knoppen voor mobiel
-- Match-status badge component (`Open` / `Sluit binnenkort` / `Gesloten` / `Auto opgehaald` / `Handmatig gecorrigeerd`)
-- Nav vereenvoudigen: Home, Prono, Klassement, Wedstrijden, Admin
-- Bonus + KO-schema worden subtabs binnen `/prono`
+## Volgorde
+1. DB-migratie: nieuwe `calculate_match_points` + meteen `recalculate_all_points()` aanroepen in dezelfde migratie
+2. Frontend breakdown-componenten opschonen (verwijder doelsaldo/bijna-juist labels)
+3. Nieuwe wijzigingsprompt voor de PDF-handleiding aanleveren
 
-## 7. Wedstrijdenpagina
-
-- Nieuwe route `/wedstrijden` (of vernieuwde bestaande)
-- Filters: ronde (fase), groep, status
-- Per wedstrijd: kickoff, status-badge, echte uitslag (indien beschikbaar)
-- Na aftrap: lijst voorspellingen collega's + distributie (bv. "5×2-1, 3×1-1")
-- Vóór aftrap: enkel eigen voorspelling
-
-## Volgorde van uitvoering
-
-1. Secret `SYNC_SECRET` aanvragen
-2. DB-migratie (alle schema-wijzigingen + nieuwe scoring functie + deadline trigger)
-3. Sync engine herschrijven (`sync.server.ts`)
-4. Hook endpoint security
-5. pg_cron jobs instellen
-6. Admin sync-tab uitbreiden + wedstrijden-beheer met source-badges
-7. Predictions UI: +/- knoppen, status-badges, breakdown weergave
-8. Nieuwe `/wedstrijden` pagina
-9. Nav simplificatie + bonus/KO als subtabs in `/prono`
-10. Globale visuele opkuis (rounded-lg, encoding, charset)
-11. Login-domein/code validatie
-
-## Vragen vóór ik begin
-
-- **Deelnamecontrole**: e-maildomein whitelist (welke domeinen?) of één join-code?
-- **Sync-secret**: ik vraag een willekeurige string als `SYNC_SECRET` — akkoord?
-- **Externe cron**: pg_cron in Lovable Cloud is beschikbaar — ik gebruik die. Akkoord, of wens je externe cron (cron-job.org) als documentatie?
-
-Dit is groot werk. Ik wacht je akkoord (en antwoorden op de 3 vragen) af voor ik begin.
+Akkoord om dit zo door te voeren?
