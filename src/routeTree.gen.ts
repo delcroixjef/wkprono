@@ -20,9 +20,7 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as AuthenticatedConfirmProfileRouteImport } from './routes/_authenticated/confirm-profile'
 import { Route as AuthenticatedBonusRouteImport } from './routes/_authenticated/bonus'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
-import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicHooksSyncResultsRouteImport } from './routes/api/public/hooks/sync-results'
-import { Route as ApiPublicHooksSendDailyDigestRouteImport } from './routes/api/public/hooks/send-daily-digest'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -80,22 +78,10 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
-const LovableEmailQueueProcessRoute =
-  LovableEmailQueueProcessRouteImport.update({
-    id: '/lovable/email/queue/process',
-    path: '/lovable/email/queue/process',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 const ApiPublicHooksSyncResultsRoute =
   ApiPublicHooksSyncResultsRouteImport.update({
     id: '/api/public/hooks/sync-results',
     path: '/api/public/hooks/sync-results',
-    getParentRoute: () => rootRouteImport,
-  } as any)
-const ApiPublicHooksSendDailyDigestRoute =
-  ApiPublicHooksSendDailyDigestRouteImport.update({
-    id: '/api/public/hooks/send-daily-digest',
-    path: '/api/public/hooks/send-daily-digest',
     getParentRoute: () => rootRouteImport,
   } as any)
 
@@ -110,9 +96,7 @@ export interface FileRoutesByFullPath {
   '/ko-schema': typeof AuthenticatedKoSchemaRoute
   '/prono': typeof AuthenticatedPronoRoute
   '/wedstrijden': typeof AuthenticatedWedstrijdenRoute
-  '/api/public/hooks/send-daily-digest': typeof ApiPublicHooksSendDailyDigestRoute
   '/api/public/hooks/sync-results': typeof ApiPublicHooksSyncResultsRoute
-  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -125,9 +109,7 @@ export interface FileRoutesByTo {
   '/ko-schema': typeof AuthenticatedKoSchemaRoute
   '/prono': typeof AuthenticatedPronoRoute
   '/wedstrijden': typeof AuthenticatedWedstrijdenRoute
-  '/api/public/hooks/send-daily-digest': typeof ApiPublicHooksSendDailyDigestRoute
   '/api/public/hooks/sync-results': typeof ApiPublicHooksSyncResultsRoute
-  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -142,9 +124,7 @@ export interface FileRoutesById {
   '/_authenticated/ko-schema': typeof AuthenticatedKoSchemaRoute
   '/_authenticated/prono': typeof AuthenticatedPronoRoute
   '/_authenticated/wedstrijden': typeof AuthenticatedWedstrijdenRoute
-  '/api/public/hooks/send-daily-digest': typeof ApiPublicHooksSendDailyDigestRoute
   '/api/public/hooks/sync-results': typeof ApiPublicHooksSyncResultsRoute
-  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -159,9 +139,7 @@ export interface FileRouteTypes {
     | '/ko-schema'
     | '/prono'
     | '/wedstrijden'
-    | '/api/public/hooks/send-daily-digest'
     | '/api/public/hooks/sync-results'
-    | '/lovable/email/queue/process'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -174,9 +152,7 @@ export interface FileRouteTypes {
     | '/ko-schema'
     | '/prono'
     | '/wedstrijden'
-    | '/api/public/hooks/send-daily-digest'
     | '/api/public/hooks/sync-results'
-    | '/lovable/email/queue/process'
   id:
     | '__root__'
     | '/'
@@ -190,18 +166,14 @@ export interface FileRouteTypes {
     | '/_authenticated/ko-schema'
     | '/_authenticated/prono'
     | '/_authenticated/wedstrijden'
-    | '/api/public/hooks/send-daily-digest'
     | '/api/public/hooks/sync-results'
-    | '/lovable/email/queue/process'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   LoginRoute: typeof LoginRoute
-  ApiPublicHooksSendDailyDigestRoute: typeof ApiPublicHooksSendDailyDigestRoute
   ApiPublicHooksSyncResultsRoute: typeof ApiPublicHooksSyncResultsRoute
-  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -283,25 +255,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/lovable/email/queue/process': {
-      id: '/lovable/email/queue/process'
-      path: '/lovable/email/queue/process'
-      fullPath: '/lovable/email/queue/process'
-      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/api/public/hooks/sync-results': {
       id: '/api/public/hooks/sync-results'
       path: '/api/public/hooks/sync-results'
       fullPath: '/api/public/hooks/sync-results'
       preLoaderRoute: typeof ApiPublicHooksSyncResultsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/api/public/hooks/send-daily-digest': {
-      id: '/api/public/hooks/send-daily-digest'
-      path: '/api/public/hooks/send-daily-digest'
-      fullPath: '/api/public/hooks/send-daily-digest'
-      preLoaderRoute: typeof ApiPublicHooksSendDailyDigestRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
@@ -337,9 +295,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   LoginRoute: LoginRoute,
-  ApiPublicHooksSendDailyDigestRoute: ApiPublicHooksSendDailyDigestRoute,
   ApiPublicHooksSyncResultsRoute: ApiPublicHooksSyncResultsRoute,
-  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

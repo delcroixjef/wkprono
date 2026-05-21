@@ -185,36 +185,6 @@ export type Database = {
         }
         Relationships: []
       }
-      email_digest_log: {
-        Row: {
-          duration_ms: number
-          id: string
-          matches_count: number
-          message: string | null
-          ran_at: string
-          recipients_count: number
-          status: string
-        }
-        Insert: {
-          duration_ms?: number
-          id?: string
-          matches_count?: number
-          message?: string | null
-          ran_at?: string
-          recipients_count?: number
-          status: string
-        }
-        Update: {
-          duration_ms?: number
-          id?: string
-          matches_count?: number
-          message?: string | null
-          ran_at?: string
-          recipients_count?: number
-          status?: string
-        }
-        Relationships: []
-      }
       email_send_log: {
         Row: {
           created_at: string
