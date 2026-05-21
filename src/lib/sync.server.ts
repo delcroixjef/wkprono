@@ -133,7 +133,9 @@ export async function runSync(): Promise<SyncResult> {
       }
       if (!dbMatch) continue;
 
-      const ft = of.score?.ft;
+      // Eindstand = na verlengingen indien gespeeld, anders na 90 min.
+      // Penalty's (score.p) tellen NIET mee — de "eindstand" blijft de stand na verlengingen.
+      const ft = of.score?.et ?? of.score?.ft;
       const isLockedManual = dbMatch.source === "manual" || dbMatch.source === "corrected";
       const canOverwrite = !isLockedManual || dbMatch.auto_sync_override;
 
