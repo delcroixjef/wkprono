@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { greeting, formatDateTime, timeUntil } from "@/lib/format";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, Clock, Trophy, ListChecks } from "lucide-react";
+import { CrowdStatsPopup } from "@/components/CrowdStatsPopup";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({ component: Dashboard });
 
@@ -41,6 +42,7 @@ function Dashboard() {
 
   return (
     <div className="space-y-6">
+      <CrowdStatsPopup />
       <section>
         <p className="text-xs uppercase tracking-wider text-muted-foreground">{greeting()}</p>
         <h1 className="text-2xl font-semibold text-foreground">{profile?.display_name?.split(" ")[0]}</h1>

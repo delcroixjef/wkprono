@@ -558,6 +558,7 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      get_crowd_stats: { Args: never; Returns: Json }
       is_admin: { Args: { _uid: string }; Returns: boolean }
       matchday_deadline: { Args: { _match_id: string }; Returns: string }
       move_to_dlq: {
