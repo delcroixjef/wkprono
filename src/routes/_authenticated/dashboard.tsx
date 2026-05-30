@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { greeting, formatDateTime, timeUntil } from "@/lib/format";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowRight, Clock, Trophy, ListChecks } from "lucide-react";
+import { CrowdStatsPopup } from "@/components/CrowdStatsPopup";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({ component: Dashboard });
 
