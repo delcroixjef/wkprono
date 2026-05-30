@@ -5,12 +5,25 @@ import { getCrowdStats, type CrowdStat } from "@/lib/crowd-stats.functions";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Sparkles } from "lucide-react";
 
-const DURATION_MS = 10_000;
+const DURATION_MS = 12_000;
 
-function pickRandom<T>(arr: T[]): T | undefined {
-  if (arr.length === 0) return undefined;
-  return arr[Math.floor(Math.random() * arr.length)];
+function pickN<T>(arr: T[], n: number): T[] {
+  const copy = [...arr];
+  const out: T[] = [];
+  while (copy.length && out.length < n) {
+    const i = Math.floor(Math.random() * copy.length);
+    out.push(copy.splice(i, 1)[0]);
+  }
+  return out;
 }
+
+const INTRO_LINES = [
+  "Wist je dat…",
+  "Hete groepsroddels 🔥",
+  "Voer voor aan de toog",
+  "De massa heeft gesproken",
+  "Tijd om elkaar te jennen",
+];
 
 export function CrowdStatsPopup() {
   const fetchStats = useServerFn(getCrowdStats);
@@ -21,12 +34,20 @@ export function CrowdStatsPopup() {
     gcTime: 0,
   });
 
-  const stat: CrowdStat | undefined = useMemo(() => pickRandom(data?.stats ?? []), [data]);
+  const stats: CrowdStat[] = useMemo(() => {
+    const all = data?.stats ?? [];
+    if (all.length === 0) return [];
+    const count = Math.min(all.length, all.length >= 3 ? 3 : 2);
+    return pickN(all, count);
+  }, [data]);
+
+  const intro = useMemo(() => INTRO_LINES[Math.floor(Math.random() * INTRO_LINES.length)], [stats]);
+
   const [open, setOpen] = useState(false);
   const [remaining, setRemaining] = useState(DURATION_MS);
 
   useEffect(() => {
-    if (!stat) return;
+    if (stats.length === 0) return;
     setOpen(true);
     setRemaining(DURATION_MS);
     const start = Date.now();
@@ -39,9 +60,9 @@ export function CrowdStatsPopup() {
       }
     }, 100);
     return () => clearInterval(interval);
-  }, [stat]);
+  }, [stats]);
 
-  if (!stat) return null;
+  if (stats.length === 0) return null;
 
   const pct = (remaining / DURATION_MS) * 100;
   const seconds = Math.ceil(remaining / 1000);
@@ -55,13 +76,21 @@ export function CrowdStatsPopup() {
               <Sparkles className="h-4 w-4" />
             </span>
             <DialogTitle className="text-sm font-semibold text-foreground">
-              Wist je dat…
+              {intro}
             </DialogTitle>
           </div>
-          <DialogDescription className="text-base leading-snug text-foreground">
-            <span className="mr-1 text-xl">{stat.emoji}</span>
-            {stat.text}
-          </DialogDescription>
+          <DialogDescription className="sr-only">Crowd-stats van de groep</DialogDescription>
+          <ul className="space-y-2.5">
+            {stats.map((s, i) => (
+              <li
+                key={i}
+                className="flex gap-2.5 rounded-xl border border-border bg-background/40 px-3 py-2.5"
+              >
+                <span className="text-lg leading-snug">{s.emoji}</span>
+                <span className="text-sm leading-snug text-foreground">{s.text}</span>
+              </li>
+            ))}
+          </ul>
         </div>
         <div className="relative h-1.5 w-full bg-muted">
           <div
@@ -70,7 +99,7 @@ export function CrowdStatsPopup() {
           />
         </div>
         <div className="flex items-center justify-between px-5 py-2 text-[11px] text-muted-foreground">
-          <span>Crowd-stat van de groep</span>
+          <span>Crowd-stats van de groep</span>
           <span className="tabular-nums">{seconds}s</span>
         </div>
       </DialogContent>
