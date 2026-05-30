@@ -42,6 +42,7 @@ function Dashboard() {
 
   return (
     <div className="space-y-6">
+      <CrowdStatsPopup />
       <section>
         <p className="text-xs uppercase tracking-wider text-muted-foreground">{greeting()}</p>
         <h1 className="text-2xl font-semibold text-foreground">{profile?.display_name?.split(" ")[0]}</h1>
