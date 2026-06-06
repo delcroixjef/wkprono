@@ -35,14 +35,16 @@ function AdminPage() {
         <p className="mt-1 text-sm text-muted-foreground">Voer uitslagen in, beheer deelnemers en vergrendel wedstrijden.</p>
       </header>
       <Tabs defaultValue="sync" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="sync">Sync</TabsTrigger>
+          <TabsTrigger value="progress">Prono-status</TabsTrigger>
           <TabsTrigger value="results">Uitslagen</TabsTrigger>
           <TabsTrigger value="bonus">Bonus</TabsTrigger>
           <TabsTrigger value="users">Deelnemers</TabsTrigger>
           <TabsTrigger value="locks">Vergrendelen</TabsTrigger>
         </TabsList>
         <TabsContent value="sync"><SyncTab /></TabsContent>
+        <TabsContent value="progress"><ProgressTab /></TabsContent>
         <TabsContent value="results"><ResultsTab /></TabsContent>
         <TabsContent value="bonus"><BonusResultsTab /></TabsContent>
         <TabsContent value="users"><UsersTab /></TabsContent>
