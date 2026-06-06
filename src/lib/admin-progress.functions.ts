@@ -1,22 +1,18 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { z } from "zod";
 
-export const getProgressForNextMatchday = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
-    const { supabase, userId } = context;
+export const getProgressForNextMatchday = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ adminUserId: z.string().uuid() }).parse(d))
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
-    // admin check
-    const { data: me } = await supabase
+    const { data: me } = await supabaseAdmin
       .from("profiles")
       .select("is_admin")
-      .eq("id", userId)
+      .eq("id", data.adminUserId)
       .maybeSingle();
     if (!me?.is_admin) throw new Error("Forbidden");
 
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-
-    // Find next match (not yet started)
     const nowIso = new Date().toISOString();
     const { data: nextMatch } = await supabaseAdmin
       .from("matches")
@@ -31,7 +27,6 @@ export const getProgressForNextMatchday = createServerFn({ method: "GET" })
       return { deadline: null, matches: [], participants: [] };
     }
 
-    // All matches on the same Brussels date
     const { data: allMatches } = await supabaseAdmin
       .from("matches")
       .select("id, home_team, away_team, match_date")
