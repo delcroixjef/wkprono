@@ -42,7 +42,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "WK 2026 Prono — WelZeker" },
       { name: "description", content: "Interne WK 2026 Prono van WelZeker." },
-      { name: "theme-color", content: "#1D9E75" },
+      { name: "theme-color", content: "#C4D600" },
       { property: "og:title", content: "WK 2026 Prono — WelZeker" },
       { name: "twitter:title", content: "WK 2026 Prono — WelZeker" },
       { property: "og:description", content: "Interne WK 2026 Prono van WelZeker." },
