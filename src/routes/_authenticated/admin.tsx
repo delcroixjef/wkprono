@@ -187,16 +187,17 @@ function UsersTab() {
     const { error } = await supabase.from("profiles").update({ is_admin: val }).eq("id", id);
     if (error) toast.error(error.message); else { toast.success("Bijgewerkt"); qc.invalidateQueries({ queryKey: ["admin-users"] }); }
   }
+  const { profile } = useAuth();
   async function toggleLock(id: string, val: boolean) {
     try {
-      await setLocked({ data: { userId: id, locked: val } });
+      await setLocked({ data: { adminUserId: profile!.id, userId: id, locked: val } });
       toast.success(val ? "Deelnemer vergrendeld" : "Deelnemer ontgrendeld");
       qc.invalidateQueries({ queryKey: ["admin-users"] });
     } catch (e: any) { toast.error(e?.message ?? "Mislukt"); }
   }
   async function removeUser(id: string, name: string) {
     try {
-      await deleteUser({ data: { userId: id } });
+      await deleteUser({ data: { adminUserId: profile!.id, userId: id } });
       toast.success(`${name} verwijderd`);
       qc.invalidateQueries({ queryKey: ["admin-users"] });
     } catch (e: any) { toast.error(e?.message ?? "Verwijderen mislukt"); }
