@@ -1,72 +1,72 @@
-# Checklist — Remix opzetten voor een nieuwe groep
 
-Volg deze stappen in volgorde nadat je via de drie-puntjes (⋯) → **Remix** een kopie van het project hebt gemaakt. De remix krijgt automatisch een **nieuwe, lege Lovable Cloud backend** (eigen database, eigen secrets), dus niets loopt door elkaar met WelZeker.
+## Doel
 
-## 1. Project hernoemen
+Twee nieuwe admin-functies toevoegen onder `/admin`:
 
-- Klik linksboven op de projectnaam → **Rename project** → bv. `WK 2026 Prono — Familie`.
-- Dit bepaalt ook de standaard publish-URL (bv. `wkprono-familie.lovable.app`).
+1. **Prono-status**: zien wie zijn voorspellingen al heeft ingevuld voor de eerstvolgende wedstrijden (vóór de deadline).
+2. **Deelnemersbeheer uitbreiden**: deelnemers kunnen **locken** (geen wijzigingen meer mogelijk) of **verwijderen**.
 
-## 2. Branding in de code aanpassen
+## 1. Nieuwe tab "Prono-status"
 
-Drie plekken waar "WelZeker" / "WK 2026 Prono" letterlijk in de code staat:
+Nieuwe tab in `src/routes/_authenticated/admin.tsx` naast de bestaande (Sync, Uitslagen, Bonus, Deelnemers, Vergrendelen).
 
-- **`src/components/Header.tsx`** — regels met `WK 2026 Prono` en `WelZeker` (titel + ondertitel in de header).
-- **`src/components/Logo.tsx`** — `aria-label="WelZeker"` aanpassen naar je nieuwe groepsnaam.
-- **`src/routes/login.tsx`** — titel `WK 2026 Prono` en regel `Interne challenge — WelZeker` op de loginpagina.
+**Scope "volgende wedstrijden":** alle wedstrijden van de eerstvolgende speeldag die nog niet voorbij is (zelfde logica als `matchday_deadline` — alle matches op dezelfde Brussels-datum als de eerstvolgende toekomstige match). De deadline = 30 min vóór de eerste match van die dag.
 
-Optioneel: kleurenpalet in `src/styles.css` aanpassen als je een andere look wil per groep (bv. familie = warmer, vrienden = donkerder).
+**UI per deelnemer (alleen `profile_confirmed = true`):**
+- Naam + initialen
+- Aantal pronos ingevuld / totaal matches van die speeldag (bv. `3/4`)
+- Status-badge:
+  - ✅ **Volledig** (alles ingevuld)
+  - ⚠️ **Deels** (sommige ingevuld)
+  - ❌ **Niets** (geen enkele)
+- Countdown tot deadline bovenaan ("Deadline over 2u 13min")
+- Filter: "Toon enkel onvolledige"
+- Per deelnemer: lijstje met ontbrekende matches (uitklapbaar)
 
-## 3. Secrets opnieuw instellen
+**Data:** één server function `getProgressForNextMatchday()` (`src/lib/admin-progress.functions.ts`) met `requireSupabaseAuth` + admin-check, die teruggeeft:
+```ts
+{
+  deadline: string | null,
+  matches: { id, home_team, away_team, match_date }[],
+  participants: { id, display_name, avatar_initials, filled_count, missing_match_ids: string[] }[]
+}
+```
+Refetcht elke 30s.
 
-De remix start met een **lege** secrets-lijst. Voeg minimaal toe:
+## 2. Tab "Deelnemers" uitbreiden
 
-- **`JOIN_CODE`** — nieuwe deelnamecode voor deze groep (bv. `FAMILIE2026`). Dit is wat deelnemers op de loginpagina invullen.
-- **`SYNC_SECRET`** — willekeurige string; nodig voor het `/api/public/hooks/sync-results` endpoint dat de openfootball-uitslagen ophaalt.
+Bestaande `UsersTab` aanpassen — naast admin-toggle:
 
-Automatisch aanwezig (niet zelf toevoegen): `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_DB_URL`, `LOVABLE_API_KEY`.
+- **Lock-toggle** per deelnemer: bevriest al hun voorspellingen (geen edits meer toegelaten, ook al is de deadline nog niet voorbij).
+- **Verwijder-knop** (rood, met bevestigingsdialog): verwijdert profiel + alle gerelateerde data (predictions, bonus_predictions, bonus_points). Auth-user blijft bestaan (kunnen we niet client-side verwijderen), maar `profile_confirmed` wordt `false` en data is weg.
 
-**Niet nodig** in deze remix (mails zijn uit):
-- `RESEND_API_KEY`
-- `EMAIL_FROM`
-- `EMAIL_DIGEST_SECRET`
+### Schemawijzigingen (migratie)
 
-## 4. Mail-functionaliteit uitschakelen
+- Kolom `profiles.is_locked boolean not null default false` toevoegen.
+- Trigger `predictions_deadline_trigger` uitbreiden: ook blokkeren als `profiles.is_locked = true` voor de user.
+- Idem voor `bonus_predictions` (nieuwe trigger of toevoeging aan bestaande lock-check).
 
-Aangezien de dagelijkse digest-mails niet meer gebruikt worden:
+### Server function voor verwijderen
 
-- Eventuele cron-job / scheduler die `/api/public/hooks/...` voor mails aanroept: niet opnieuw configureren in de remix.
-- Lovable Emails uitzetten via **Connectors → Lovable Email → disable** (voorkomt dat er per ongeluk auth-/transactionele mails uitgaan).
-- Code-opkuis is optioneel — ongebruikte email-helpers doen geen kwaad als ze niet aangeroepen worden, maar je kan ze later verwijderen voor netheid.
+`deleteParticipant({ userId })` (`src/lib/admin-users.functions.ts`) met `requireSupabaseAuth` + admin-check:
+1. Verifieer dat de caller admin is.
+2. Cascade delete via `supabaseAdmin`: `predictions`, `bonus_predictions`, `bonus_points`, `profiles`.
+3. (Auth user in `auth.users` blijft — verwijderen vereist service-role admin API; optioneel later.)
 
-## 5. Eerste admin aanmaken
+Lock-toggle gebeurt gewoon via `UPDATE profiles SET is_locked = ...` (admin-only, beschermd door RLS — RLS-policy moet `is_admin()` check krijgen voor updates van andere profielen). Aangezien huidige RLS `profiles_anon_all` met `true` toelaat, werkt dit, maar we voegen tegelijk een nettere check toe in de server function.
 
-In de nieuwe (lege) database is er nog geen admin:
+## Bestanden
 
-1. Eén keer inloggen op de remix met je naam + e-mail + de nieuwe `JOIN_CODE`. Dit maakt een rij in `profiles`.
-2. In Lovable Cloud → Database → `profiles` tabel → jouw rij → `is_admin` op `true` zetten.
-3. Daarna verschijnt het **Admin**-menu en kan je wedstrijden beheren.
+**Nieuw**
+- `src/lib/admin-progress.functions.ts` — `getProgressForNextMatchday`
+- `src/lib/admin-users.functions.ts` — `deleteParticipant`, `setParticipantLocked`
+- `supabase/migrations/<ts>_admin_participant_lock.sql`
 
-## 6. Wedstrijden & sync
+**Aangepast**
+- `src/routes/_authenticated/admin.tsx` — extra tab "Prono-status", uitgebreide `UsersTab` (lock + delete + bevestigingsdialog)
 
-De wedstrijdenlijst (poules, KO-schema) zit **niet** automatisch in een verse database. Twee opties:
+## Open vragen
 
-- **A. Automatisch via sync** — Zodra de openfootball-data live is, roept het sync-endpoint uitslagen op en koppelt ze aan bestaande matches. Maar je moet eerst de basis-matches (datum, teams, match_number) zelf inladen. Het simpelst: laat Lovable de seed-migratie uit het origineel kopiëren naar de remix.
-- **B. Manueel** — Via het Admin-paneel matches één voor één toevoegen (alleen praktisch als je met een klein toernooi/groep wil testen).
-
-Sync-endpoint zelf: blijft `/api/public/hooks/sync-results` met header `x-sync-secret: <jouw nieuwe SYNC_SECRET>`. Eventuele externe cron (bv. cron-job.org) opnieuw instellen met de **nieuwe** URL + nieuwe secret.
-
-## 7. Publish & delen
-
-- Klik rechtsboven op **Publish** → kies de nieuwe subdomein-naam (bv. `wkprono-familie.lovable.app`).
-- Test op een tweede toestel: login met de nieuwe `JOIN_CODE` werkt, klassement start op nul.
-- Deel de URL + code met de groep.
-
-## 8. Optioneel — bonusvragen & favorieten
-
-- `src/lib/teams.ts` bevat de `TOP_10_FAVORITES` lijst die gebruikt wordt voor de "vroege uitschakeling"-bonus. Hoeft normaal niet aangepast.
-- Bonusvragen zelf (topscorer, clean sheet, finale) worden per deelnemer ingevuld via `/bonus` — geen code-aanpassing nodig.
-
----
-
-**Samenvatting van wat je écht móet doen per remix:** project hernoemen → 3 branding-tekstjes → `JOIN_CODE` + `SYNC_SECRET` secrets → eerste admin promoveren → wedstrijden seeden → publish. De rest is optioneel.
+1. **Verwijderen — wat precies?** Volledig wissen (predictions, bonus, profile) of enkel deactiveren (`profile_confirmed=false`, data behouden)?
+2. **Lock — alleen pronos of ook inloggen blokkeren?** Inloggen blokkeren vereist auth-admin API; ik stel voor: alleen pronos bevriezen (eenvoudiger en omkeerbaar).
+3. **"Volgende wedstrijden"** = eerstvolgende speeldag (alle matches die dag). OK, of liever volgende N=1 enkele match?
