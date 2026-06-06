@@ -251,14 +251,16 @@ function UsersTab() {
 }
 
 function ProgressTab() {
+  const { profile } = useAuth();
   const getProgress = useServerFn(getProgressForNextMatchday);
   const [showOnlyIncomplete, setShowOnlyIncomplete] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   const { data, isLoading, error } = useQuery({
     queryKey: ["admin-progress"],
-    queryFn: () => getProgress(),
+    queryFn: () => getProgress({ data: { adminUserId: profile!.id } }),
     refetchInterval: 30_000,
     retry: false,
+    enabled: !!profile?.id,
   });
 
   if (isLoading) return <Skeleton className="h-96" />;
