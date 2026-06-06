@@ -176,32 +176,197 @@ function CountrySel({ v, onChange }: { v: string | null | undefined; onChange: (
 
 function UsersTab() {
   const qc = useQueryClient();
+  const setLocked = useServerFn(setParticipantLocked);
+  const deleteUser = useServerFn(deleteParticipant);
   const { data, isLoading } = useQuery({
     queryKey: ["admin-users"],
     queryFn: async () => (await supabase.from("profiles").select("*").order("display_name")).data ?? [],
   });
   if (isLoading || !data) return <Skeleton className="h-96" />;
-  async function toggle(id: string, val: boolean) {
+  async function toggleAdmin(id: string, val: boolean) {
     const { error } = await supabase.from("profiles").update({ is_admin: val }).eq("id", id);
     if (error) toast.error(error.message); else { toast.success("Bijgewerkt"); qc.invalidateQueries({ queryKey: ["admin-users"] }); }
+  }
+  async function toggleLock(id: string, val: boolean) {
+    try {
+      await setLocked({ data: { userId: id, locked: val } });
+      toast.success(val ? "Deelnemer vergrendeld" : "Deelnemer ontgrendeld");
+      qc.invalidateQueries({ queryKey: ["admin-users"] });
+    } catch (e: any) { toast.error(e?.message ?? "Mislukt"); }
+  }
+  async function removeUser(id: string, name: string) {
+    try {
+      await deleteUser({ data: { userId: id } });
+      toast.success(`${name} verwijderd`);
+      qc.invalidateQueries({ queryKey: ["admin-users"] });
+    } catch (e: any) { toast.error(e?.message ?? "Verwijderen mislukt"); }
   }
   return (
     <div className="rounded-2xl border border-border bg-surface">
       <ul className="divide-y divide-border">
-        {data.map(u => (
+        {data.map((u: any) => (
           <li key={u.id} className="flex items-center gap-3 px-4 py-3">
             <span className="grid h-9 w-9 place-items-center rounded-full bg-muted text-xs font-semibold">{u.avatar_initials}</span>
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-medium text-foreground">{u.display_name}</div>
               <div className="truncate text-xs text-muted-foreground">{u.email}</div>
             </div>
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-muted-foreground">Admin</span>
-              <Switch checked={u.is_admin} onCheckedChange={(v) => toggle(u.id, v)} />
+            <div className="flex items-center gap-3 text-xs">
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground">Admin</span>
+                <Switch checked={u.is_admin} onCheckedChange={(v) => toggleAdmin(u.id, v)} />
+              </div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground">Lock</span>
+                <Switch checked={!!u.is_locked} onCheckedChange={(v) => toggleLock(u.id, v)} />
+              </div>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:bg-destructive/10">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Deelnemer verwijderen?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      <strong>{u.display_name}</strong> en al hun voorspellingen worden permanent verwijderd. Deze actie kan niet ongedaan worden gemaakt.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Annuleer</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => removeUser(u.id, u.display_name)} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                      Verwijder
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+function ProgressTab() {
+  const getProgress = useServerFn(getProgressForNextMatchday);
+  const [showOnlyIncomplete, setShowOnlyIncomplete] = useState(false);
+  const [expanded, setExpanded] = useState<Record<string, boolean>>({});
+  const { data, isLoading } = useQuery({
+    queryKey: ["admin-progress"],
+    queryFn: () => getProgress(),
+    refetchInterval: 30_000,
+  });
+
+  if (isLoading || !data) return <Skeleton className="h-96" />;
+
+  if (!data.matches.length) {
+    return (
+      <div className="rounded-2xl border border-border bg-surface p-6 text-center text-sm text-muted-foreground">
+        Geen aankomende wedstrijden gevonden.
+      </div>
+    );
+  }
+
+  const deadline = data.deadline ? new Date(data.deadline) : null;
+  const past = deadline && deadline.getTime() <= Date.now();
+  const total = data.matches.length;
+  const matchById = new Map(data.matches.map((m) => [m.id, m]));
+
+  const participants = showOnlyIncomplete
+    ? data.participants.filter((p) => p.filled_count < total)
+    : data.participants;
+
+  const sorted = [...participants].sort((a, b) => a.filled_count - b.filled_count);
+  const complete = data.participants.filter((p) => p.filled_count === total).length;
+  const none = data.participants.filter((p) => p.filled_count === 0).length;
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-2xl border border-border bg-surface p-4">
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <div>
+            <div className="text-xs uppercase tracking-wider text-muted-foreground">Eerstvolgende speeldag</div>
+            <div className="mt-0.5 text-base font-semibold text-foreground">
+              {total} wedstrijd{total === 1 ? "" : "en"} ·{" "}
+              {new Date(data.matches[0].match_date).toLocaleDateString("nl-BE", { weekday: "long", day: "numeric", month: "long" })}
+            </div>
+          </div>
+          {deadline && (
+            <div className={`text-sm font-medium ${past ? "text-destructive" : "text-foreground"}`}>
+              {past ? "Deadline verstreken" : `Deadline over ${formatDistanceToNowStrict(deadline, { locale: nl })}`}
+            </div>
+          )}
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-2 text-xs">
+          <Tile label="Volledig" value={`${complete}/${data.participants.length}`} sub="" />
+          <Tile label="Niets" value={String(none)} sub="" />
+          <Tile label="Wedstrijden" value={String(total)} sub="" />
+        </div>
+        <label className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">
+          <Switch checked={showOnlyIncomplete} onCheckedChange={setShowOnlyIncomplete} />
+          Toon enkel onvolledige
+        </label>
+      </div>
+
+      <div className="rounded-2xl border border-border bg-surface">
+        <ul className="divide-y divide-border">
+          {sorted.map((p) => {
+            const ratio = total === 0 ? 0 : p.filled_count / total;
+            const tone = p.filled_count === total ? "success" : p.filled_count === 0 ? "destructive" : "warning";
+            const isOpen = !!expanded[p.id];
+            return (
+              <li key={p.id}>
+                <div className="flex items-center gap-3 px-4 py-3">
+                  <button
+                    onClick={() => setExpanded((s) => ({ ...s, [p.id]: !s[p.id] }))}
+                    className="grid h-6 w-6 place-items-center text-muted-foreground hover:text-foreground"
+                    disabled={p.missing_match_ids.length === 0}
+                  >
+                    {p.missing_match_ids.length > 0 ? (isOpen ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />) : null}
+                  </button>
+                  <span className="grid h-9 w-9 place-items-center rounded-full bg-muted text-xs font-semibold">{p.avatar_initials}</span>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium text-foreground">
+                      {p.display_name} {p.is_locked && <Lock className="inline h-3 w-3 text-muted-foreground" />}
+                    </div>
+                    <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                      <div
+                        className={`h-full ${tone === "success" ? "bg-success" : tone === "destructive" ? "bg-destructive" : "bg-warning"}`}
+                        style={{ width: `${ratio * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                  <span className={`shrink-0 rounded-md px-2 py-0.5 text-xs font-semibold ${
+                    tone === "success" ? "bg-success/15 text-success"
+                      : tone === "destructive" ? "bg-destructive/15 text-destructive"
+                      : "bg-warning/15 text-warning"
+                  }`}>
+                    {p.filled_count}/{total}
+                  </span>
+                </div>
+                {isOpen && p.missing_match_ids.length > 0 && (
+                  <ul className="space-y-1 border-t border-border bg-background/50 px-14 py-2 text-xs text-muted-foreground">
+                    {p.missing_match_ids.map((id) => {
+                      const m = matchById.get(id);
+                      if (!m) return null;
+                      return (
+                        <li key={id}>
+                          • {m.home_team} – {m.away_team} <span className="text-[10px]">({new Date(m.match_date).toLocaleString("nl-BE", { hour: "2-digit", minute: "2-digit" })})</span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
+              </li>
+            );
+          })}
+          {sorted.length === 0 && (
+            <li className="px-4 py-6 text-center text-xs text-muted-foreground">Iedereen is volledig in orde 🎉</li>
+          )}
+        </ul>
+      </div>
     </div>
   );
 }
