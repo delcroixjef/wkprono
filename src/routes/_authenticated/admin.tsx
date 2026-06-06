@@ -253,13 +253,25 @@ function ProgressTab() {
   const getProgress = useServerFn(getProgressForNextMatchday);
   const [showOnlyIncomplete, setShowOnlyIncomplete] = useState(false);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ["admin-progress"],
     queryFn: () => getProgress(),
     refetchInterval: 30_000,
+    retry: false,
   });
 
-  if (isLoading || !data) return <Skeleton className="h-96" />;
+  if (isLoading) return <Skeleton className="h-96" />;
+  if (error) {
+    return (
+      <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+        Kon prono-status niet laden: {(error as any)?.message ?? "onbekende fout"}.
+        <div className="mt-2 text-xs text-muted-foreground">
+          Tip: als je de publieke site bekijkt, publiceer eerst de nieuwste versie zodat de nieuwe server-functie beschikbaar is.
+        </div>
+      </div>
+    );
+  }
+  if (!data) return <Skeleton className="h-96" />;
 
   if (!data.matches.length) {
     return (
