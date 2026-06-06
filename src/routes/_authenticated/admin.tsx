@@ -12,10 +12,14 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
-import { Lock, Unlock, Save, Calculator, RefreshCw, CheckCircle2, AlertCircle } from "lucide-react";
+import { Lock, Unlock, Save, Calculator, RefreshCw, CheckCircle2, AlertCircle, Trash2, ChevronDown, ChevronRight } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
 import { triggerSync } from "@/lib/sync.functions";
-import { formatDistanceToNow } from "date-fns";
+import { getProgressForNextMatchday } from "@/lib/admin-progress.functions";
+import { setParticipantLocked, deleteParticipant } from "@/lib/admin-users.functions";
+import { formatDistanceToNow, formatDistanceToNowStrict } from "date-fns";
+import { nl } from "date-fns/locale";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/admin")({ component: AdminPage });
 
