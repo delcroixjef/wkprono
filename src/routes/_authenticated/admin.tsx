@@ -56,6 +56,7 @@ function AdminPage() {
 
 function ResultsTab() {
   const qc = useQueryClient();
+  const { profile } = useAuth();
   const saveMatch = useServerFn(saveMatchResult);
   const { data, isLoading } = useQuery({
     queryKey: ["admin-matches"],
@@ -73,7 +74,7 @@ function ResultsTab() {
     const v = values[id]; if (!v || v.h === "" || v.a === "") return toast.error("Vul beide scores in");
     setBusy(id);
     try {
-      await saveMatch({ data: { matchId: id, homeScore: parseInt(v.h, 10), awayScore: parseInt(v.a, 10) } });
+      await saveMatch({ data: { adminUserId: profile!.id, matchId: id, homeScore: parseInt(v.h, 10), awayScore: parseInt(v.a, 10) } });
       toast.success("Opgeslagen & punten berekend");
       await Promise.all([
         qc.invalidateQueries({ queryKey: ["admin-matches"] }),
@@ -434,6 +435,7 @@ function LocksTab() {
 
 function SyncTab() {
   const qc = useQueryClient();
+  const { profile } = useAuth();
   const sync = useServerFn(triggerSync);
   const [busy, setBusy] = useState(false);
 
@@ -460,7 +462,7 @@ function SyncTab() {
   async function run() {
     setBusy(true);
     try {
-      const r = await sync();
+      const r = await sync({ data: { adminUserId: profile!.id } });
       if (r.status === "ok") toast.success(r.message ?? "Sync OK");
       else toast.error(r.message ?? "Sync mislukt");
       qc.invalidateQueries({ queryKey: ["sync-log"] });
