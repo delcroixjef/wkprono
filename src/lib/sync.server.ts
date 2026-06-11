@@ -261,36 +261,22 @@ async function logSync(r: SyncResult) {
   } catch (e) { console.error("[sync] log faalde", e); }
 }
 
-async function recomputeBonusStats(ofMatches: OFMatch[]) {
+async function recomputeBonusStats(ofMatches: SyncedMatch[]) {
   const goalsByPlayer = new Map<string, { country: string; goals: number }>();
   const cleanSheetByCountry = new Map<string, number>();
   const goalsByCountry = new Map<string, number>();
 
   for (const of of ofMatches) {
-    const home = mapTeam(teamName(of.team1));
-    const away = mapTeam(teamName(of.team2));
-    const ft = of.score?.ft;
+    const home = of.home;
+    const away = of.away;
+    const ft = of.homeScore !== null && of.awayScore !== null ? [of.homeScore, of.awayScore] : null;
     if (!home || !away || !ft) continue;
 
     if (ft[1] === 0) cleanSheetByCountry.set(home, (cleanSheetByCountry.get(home) ?? 0) + 1);
     if (ft[0] === 0) cleanSheetByCountry.set(away, (cleanSheetByCountry.get(away) ?? 0) + 1);
 
-    for (const g of of.goals1 ?? []) {
-      if (g.owngoal) { goalsByCountry.set(away, (goalsByCountry.get(away) ?? 0) + 1); continue; }
-      goalsByCountry.set(home, (goalsByCountry.get(home) ?? 0) + 1);
-      if (!g.name) continue;
-      const key = `${home}::${g.name}`;
-      const prev = goalsByPlayer.get(key);
-      goalsByPlayer.set(key, { country: home, goals: (prev?.goals ?? 0) + 1 });
-    }
-    for (const g of of.goals2 ?? []) {
-      if (g.owngoal) { goalsByCountry.set(home, (goalsByCountry.get(home) ?? 0) + 1); continue; }
-      goalsByCountry.set(away, (goalsByCountry.get(away) ?? 0) + 1);
-      if (!g.name) continue;
-      const key = `${away}::${g.name}`;
-      const prev = goalsByPlayer.get(key);
-      goalsByPlayer.set(key, { country: away, goals: (prev?.goals ?? 0) + 1 });
-    }
+    goalsByCountry.set(home, (goalsByCountry.get(home) ?? 0) + ft[0]);
+    goalsByCountry.set(away, (goalsByCountry.get(away) ?? 0) + ft[1]);
   }
 
   let maxGoals = 0;
