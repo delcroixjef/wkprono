@@ -75,10 +75,16 @@ function ResultsTab() {
     try {
       await saveMatch({ data: { matchId: id, homeScore: parseInt(v.h, 10), awayScore: parseInt(v.a, 10) } });
       toast.success("Opgeslagen & punten berekend");
-      qc.invalidateQueries({ queryKey: ["admin-matches"] });
-      qc.invalidateQueries({ queryKey: ["leaderboard"] });
-      qc.invalidateQueries({ queryKey: ["dashboard"] });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["admin-matches"] }),
+        qc.invalidateQueries({ queryKey: ["leaderboard"] }),
+        qc.invalidateQueries({ queryKey: ["dashboard"] }),
+        qc.invalidateQueries({ queryKey: ["matches"] }),
+        qc.invalidateQueries({ queryKey: ["today-matches"] }),
+        qc.invalidateQueries({ queryKey: ["admin-locks"] }),
+      ]);
     } catch (e: any) {
+      console.error("[admin] saveMatch failed", e);
       toast.error(e?.message ?? "Opslaan mislukt");
     } finally {
       setBusy(null);
