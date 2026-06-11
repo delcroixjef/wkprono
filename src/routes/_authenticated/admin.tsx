@@ -14,7 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Lock, Unlock, Save, Calculator, RefreshCw, CheckCircle2, AlertCircle, Trash2, ChevronDown, ChevronRight } from "lucide-react";
 import { useServerFn } from "@tanstack/react-start";
-import { triggerSync } from "@/lib/sync.functions";
+import { triggerSync, saveMatchResult } from "@/lib/sync.functions";
 import { getProgressForNextMatchday } from "@/lib/admin-progress.functions";
 import { setParticipantLocked, deleteParticipant } from "@/lib/admin-users.functions";
 import { formatDistanceToNow, formatDistanceToNowStrict } from "date-fns";
@@ -56,6 +56,7 @@ function AdminPage() {
 
 function ResultsTab() {
   const qc = useQueryClient();
+  const saveMatch = useServerFn(saveMatchResult);
   const { data, isLoading } = useQuery({
     queryKey: ["admin-matches"],
     queryFn: async () => {
@@ -71,14 +72,17 @@ function ResultsTab() {
   async function saveOne(id: string) {
     const v = values[id]; if (!v || v.h === "" || v.a === "") return toast.error("Vul beide scores in");
     setBusy(id);
-    const { error } = await supabase.from("matches").update({
-      actual_home_score: parseInt(v.h, 10), actual_away_score: parseInt(v.a, 10), is_locked: true,
-    }).eq("id", id);
-    if (error) { setBusy(null); return toast.error(error.message); }
-    const { error: rpcErr } = await supabase.rpc("calculate_match_points", { _match_id: id });
-    setBusy(null);
-    if (rpcErr) toast.error(`Opgeslagen maar puntenfout: ${rpcErr.message}`);
-    else { toast.success("Opgeslagen & punten berekend"); qc.invalidateQueries({ queryKey: ["admin-matches"] }); }
+    try {
+      await saveMatch({ data: { matchId: id, homeScore: parseInt(v.h, 10), awayScore: parseInt(v.a, 10) } });
+      toast.success("Opgeslagen & punten berekend");
+      qc.invalidateQueries({ queryKey: ["admin-matches"] });
+      qc.invalidateQueries({ queryKey: ["leaderboard"] });
+      qc.invalidateQueries({ queryKey: ["dashboard"] });
+    } catch (e: any) {
+      toast.error(e?.message ?? "Opslaan mislukt");
+    } finally {
+      setBusy(null);
+    }
   }
 
   return (
