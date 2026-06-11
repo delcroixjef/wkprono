@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.calculate_match_points(uuid) TO authenticated, service_role;
