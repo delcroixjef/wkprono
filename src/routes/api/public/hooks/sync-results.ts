@@ -1,5 +1,4 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { runSync } from "@/lib/sync.server";
 
 function checkSecret(request: Request): boolean {
   const expected = process.env.SYNC_SECRET;
@@ -16,6 +15,7 @@ async function handle(request: Request) {
       status: 401, headers: { "Content-Type": "application/json" },
     });
   }
+  const { runSync } = await import("@/lib/sync.server");
   const result = await runSync();
   return Response.json(result);
 }
