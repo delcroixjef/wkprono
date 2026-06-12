@@ -5,7 +5,7 @@ import { getCrowdStats, type CrowdStat } from "@/lib/crowd-stats.functions";
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Sparkles } from "lucide-react";
 
-const DURATION_MS = 12_000;
+const DURATION_MS = 7_000;
 
 function pickN<T>(arr: T[], n: number): T[] {
   const copy = [...arr];
@@ -23,6 +23,8 @@ const INTRO_LINES = [
   "Voer voor aan de toog",
   "De massa heeft gesproken",
   "Tijd om elkaar te jennen",
+  "Stat van het moment",
+  "Even tussendoor…",
 ];
 
 export function CrowdStatsPopup() {
@@ -37,7 +39,7 @@ export function CrowdStatsPopup() {
   const stats: CrowdStat[] = useMemo(() => {
     const all = data?.stats ?? [];
     if (all.length === 0) return [];
-    const count = Math.min(all.length, all.length >= 3 ? 3 : 2);
+    const count = Math.min(all.length, 2);
     return pickN(all, count);
   }, [data]);
 
