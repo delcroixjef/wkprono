@@ -39,8 +39,18 @@ export function CrowdStatsPopup() {
   const stats: CrowdStat[] = useMemo(() => {
     const all = data?.stats ?? [];
     if (all.length === 0) return [];
-    const count = Math.min(all.length, 2);
-    return pickN(all, count);
+    const GENERAL = new Set(["total_preds", "avg_goals"]);
+    const general = all.filter((s) => GENERAL.has(s.type));
+    const personal = all.filter((s) => !GENERAL.has(s.type));
+    const out: CrowdStat[] = [];
+    if (personal.length) out.push(pickN(personal, 1)[0]);
+    if (general.length) out.push(pickN(general, 1)[0]);
+    if (out.length === 0) out.push(...pickN(all, Math.min(all.length, 2)));
+    else if (out.length === 1) {
+      const pool = (personal.length ? personal : general).filter((s) => s !== out[0]);
+      if (pool.length) out.push(pickN(pool, 1)[0]);
+    }
+    return out;
   }, [data]);
 
   const intro = useMemo(() => INTRO_LINES[Math.floor(Math.random() * INTRO_LINES.length)], [stats]);
