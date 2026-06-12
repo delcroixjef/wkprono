@@ -16,7 +16,8 @@ import { Lock, Unlock, Save, Calculator, RefreshCw, CheckCircle2, AlertCircle, T
 import { useServerFn } from "@tanstack/react-start";
 import { triggerSync, saveMatchResult } from "@/lib/sync.functions";
 import { getProgressForNextMatchday } from "@/lib/admin-progress.functions";
-import { setParticipantLocked, deleteParticipant } from "@/lib/admin-users.functions";
+import { setParticipantLocked, deleteParticipant, setParticipantEmail } from "@/lib/admin-users.functions";
+void setParticipantEmail;
 import { formatDistanceToNow, formatDistanceToNowStrict } from "date-fns";
 import { nl } from "date-fns/locale";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
