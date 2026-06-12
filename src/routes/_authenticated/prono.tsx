@@ -103,31 +103,17 @@ function PredictionsBlock({ matches, preds, userId, onSaved }: { matches: Match[
 
   async function save() {
     setBusy(true);
-    // Speeldag-deadline: 30 min vóór eerste match van dezelfde Brusselse kalenderdag
     const LOCK_BUFFER_MS = 30 * 60 * 1000;
-    const dayKey = (iso: string) => {
-      const parts = new Intl.DateTimeFormat("en-CA", {
-        timeZone: "Europe/Brussels", year: "numeric", month: "2-digit", day: "2-digit",
-      }).formatToParts(new Date(iso));
-      return `${parts.find(p=>p.type==="year")!.value}-${parts.find(p=>p.type==="month")!.value}-${parts.find(p=>p.type==="day")!.value}`;
-    };
-    const firstByDay = new Map<string, number>();
-    for (const m of matches) {
-      const k = dayKey(m.match_date);
-      const t = new Date(m.match_date).getTime();
-      const cur = firstByDay.get(k);
-      if (cur === undefined || t < cur) firstByDay.set(k, t);
-    }
     const now = Date.now();
     const rows = matches
       .filter(m => {
         if (m.is_locked) return false;
-        const first = firstByDay.get(dayKey(m.match_date)) ?? new Date(m.match_date).getTime();
-        return now < first - LOCK_BUFFER_MS;
+        return now < new Date(m.match_date).getTime() - LOCK_BUFFER_MS;
       })
       .map(m => ({ id: m.id, h: values[m.id]?.h, a: values[m.id]?.a }))
       .filter(r => r.h !== "" && r.a !== "");
     if (rows.length === 0) { setBusy(false); toast.error("Deadline verstreken of niets in te vullen."); return; }
+
 
     const payload = rows.map(r => ({
       user_id: userId, match_id: r.id,
@@ -160,15 +146,10 @@ function PredictionsBlock({ matches, preds, userId, onSaved }: { matches: Match[
     <div className="space-y-4">
       {[...byDay.entries()].map(([day, list]) => {
         const sorted = [...list].sort((a, b) => +new Date(a.match_date) - +new Date(b.match_date));
-        const firstKickoff = new Date(sorted[0].match_date).getTime();
-        const deadlineMs = firstKickoff - LOCK_BUFFER_MS;
-        const deadlineISO = new Date(deadlineMs).toISOString();
-        const dayLocked = Date.now() >= deadlineMs || sorted.every(m => m.is_locked);
         return (
         <div key={day} className="rounded-2xl border border-border bg-surface">
           <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{formatDateTime(sorted[0].match_date)}</span>
-            <DeadlineChip iso={deadlineISO} locked={dayLocked} />
           </div>
           <ul className="divide-y divide-border">
             {sorted.map(m => {
@@ -177,7 +158,10 @@ function PredictionsBlock({ matches, preds, userId, onSaved }: { matches: Match[
               const saved = pred && v.h === String(pred.predicted_home_score) && v.a === String(pred.predicted_away_score) && v.h !== "";
               const hasActual = m.actual_home_score !== null && m.actual_away_score !== null;
               const points = pred?.points_earned;
-              const disabled = dayLocked || m.is_locked || m.home_team === "TBD";
+              const kickoffMs = new Date(m.match_date).getTime();
+              const deadlineMs = kickoffMs - LOCK_BUFFER_MS;
+              const matchLocked = Date.now() >= deadlineMs || m.is_locked;
+              const disabled = matchLocked || m.home_team === "TBD";
 
               return (
                 <li key={m.id} className="px-3 py-3">
@@ -201,20 +185,20 @@ function PredictionsBlock({ matches, preds, userId, onSaved }: { matches: Match[
                     </div>
                     <span className="flex-1 truncate text-left text-sm font-medium text-foreground">{m.away_team}</span>
                   </div>
-                  {(hasActual || disabled) && (
-                    <div className="mt-2 flex items-center justify-between pl-8 text-[11px]">
-                      {hasActual ? (
-                        <span className="text-muted-foreground">
-                          Uitslag: <span className="font-semibold text-foreground">{m.actual_home_score} – {m.actual_away_score}</span>
-                        </span>
-                      ) : <span className="text-muted-foreground inline-flex items-center gap-1"><Lock className="h-3 w-3" />Vergrendeld</span>}
-                      {points !== null && points !== undefined && (
-                        <span className={`rounded-full px-2 py-0.5 font-semibold ${points > 0 ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
-                          {points > 0 ? `+${points}` : "0"} pt
-                        </span>
-                      )}
-                    </div>
-                  )}
+                  <div className="mt-2 flex items-center justify-between gap-2 pl-8 text-[11px]">
+                    {hasActual ? (
+                      <span className="text-muted-foreground">
+                        Uitslag: <span className="font-semibold text-foreground">{m.actual_home_score} – {m.actual_away_score}</span>
+                      </span>
+                    ) : (
+                      <DeadlineChip iso={new Date(deadlineMs).toISOString()} locked={matchLocked} />
+                    )}
+                    {points !== null && points !== undefined && (
+                      <span className={`rounded-full px-2 py-0.5 font-semibold ${points > 0 ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive"}`}>
+                        {points > 0 ? `+${points}` : "0"} pt
+                      </span>
+                    )}
+                  </div>
                 </li>
               );
             })}
@@ -222,6 +206,7 @@ function PredictionsBlock({ matches, preds, userId, onSaved }: { matches: Match[
         </div>
         );
       })}
+
 
       <div className="sticky bottom-16 z-10">
         <Button onClick={save} disabled={busy} className="w-full h-11 shadow-lg">
