@@ -153,26 +153,6 @@ export async function runSync(): Promise<SyncResult> {
     const nowMs = Date.now();
     const lockBuffer = 30 * 60 * 1000;
 
-    // Speeldag-deadline: 30 min vóór de eerste match van dezelfde kalenderdag (Europe/Brussels)
-    const dayKey = (iso: string) => {
-      const d = new Date(iso);
-      const parts = new Intl.DateTimeFormat("en-CA", {
-        timeZone: "Europe/Brussels", year: "numeric", month: "2-digit", day: "2-digit",
-      }).formatToParts(d);
-      const y = parts.find(p => p.type === "year")!.value;
-      const m = parts.find(p => p.type === "month")!.value;
-      const da = parts.find(p => p.type === "day")!.value;
-      return `${y}-${m}-${da}`;
-    };
-    const firstKickoffByDay = new Map<string, number>();
-    for (const m of dbMatches ?? []) {
-      const k = dayKey(m.match_date);
-      const t = new Date(m.match_date).getTime();
-      const cur = firstKickoffByDay.get(k);
-      if (cur === undefined || t < cur) firstKickoffByDay.set(k, t);
-    }
-
-
     for (const synced of syncedMatches) {
       const dbMatch = byTeams.get(`${synced.home}::${synced.away}`) ?? null;
       if (!dbMatch) continue;
@@ -212,10 +192,11 @@ export async function runSync(): Promise<SyncResult> {
         }
       }
 
-      // Pre-kickoff lock: vergrendel zodra de speeldag-deadline (eerste match - 30 min) verstreken is
+      // Pre-kickoff lock: vergrendel deze individuele wedstrijd 30 min vóór haar eigen aftrap.
+      // match_date is een absoluut UTC-instant, dus "kickoff - 30 min" valt automatisch op
+      // het juiste tijdstip in Europese/Brusselse tijd (bv. 21:00 BE → deadline 20:30 BE).
       if (!dbMatch.is_locked && !(synced.completed && synced.homeScore !== null && synced.awayScore !== null)) {
-        const firstKickoff = firstKickoffByDay.get(dayKey(dbMatch.match_date));
-        const deadline = (firstKickoff ?? new Date(dbMatch.match_date).getTime()) - lockBuffer;
+        const deadline = new Date(dbMatch.match_date).getTime() - lockBuffer;
         if (nowMs >= deadline) {
           await supabaseAdmin.from("matches").update({ is_locked: true }).eq("id", dbMatch.id);
           matchesLocked++;
@@ -223,6 +204,7 @@ export async function runSync(): Promise<SyncResult> {
       }
 
     }
+
 
     await recomputeBonusStats(syncedMatches);
     await recomputeAllBonusPoints();
