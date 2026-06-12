@@ -103,31 +103,17 @@ function PredictionsBlock({ matches, preds, userId, onSaved }: { matches: Match[
 
   async function save() {
     setBusy(true);
-    // Speeldag-deadline: 30 min vóór eerste match van dezelfde Brusselse kalenderdag
     const LOCK_BUFFER_MS = 30 * 60 * 1000;
-    const dayKey = (iso: string) => {
-      const parts = new Intl.DateTimeFormat("en-CA", {
-        timeZone: "Europe/Brussels", year: "numeric", month: "2-digit", day: "2-digit",
-      }).formatToParts(new Date(iso));
-      return `${parts.find(p=>p.type==="year")!.value}-${parts.find(p=>p.type==="month")!.value}-${parts.find(p=>p.type==="day")!.value}`;
-    };
-    const firstByDay = new Map<string, number>();
-    for (const m of matches) {
-      const k = dayKey(m.match_date);
-      const t = new Date(m.match_date).getTime();
-      const cur = firstByDay.get(k);
-      if (cur === undefined || t < cur) firstByDay.set(k, t);
-    }
     const now = Date.now();
     const rows = matches
       .filter(m => {
         if (m.is_locked) return false;
-        const first = firstByDay.get(dayKey(m.match_date)) ?? new Date(m.match_date).getTime();
-        return now < first - LOCK_BUFFER_MS;
+        return now < new Date(m.match_date).getTime() - LOCK_BUFFER_MS;
       })
       .map(m => ({ id: m.id, h: values[m.id]?.h, a: values[m.id]?.a }))
       .filter(r => r.h !== "" && r.a !== "");
     if (rows.length === 0) { setBusy(false); toast.error("Deadline verstreken of niets in te vullen."); return; }
+
 
     const payload = rows.map(r => ({
       user_id: userId, match_id: r.id,
