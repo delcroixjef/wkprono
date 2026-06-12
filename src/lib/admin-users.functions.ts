@@ -48,3 +48,29 @@ export const deleteParticipant = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
+
+export const setParticipantEmail = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z.object({
+      adminUserId: z.string().uuid(),
+      userId: z.string().uuid(),
+      email: z.string().email(),
+    }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    await assertAdmin(data.adminUserId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { error: authErr } = await supabaseAdmin.auth.admin.updateUserById(data.userId, {
+      email: data.email,
+      email_confirm: true,
+    });
+    if (authErr) throw new Error(authErr.message);
+
+    const { error } = await supabaseAdmin
+      .from("profiles")
+      .update({ email: data.email })
+      .eq("id", data.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
