@@ -74,3 +74,16 @@ export const setParticipantEmail = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const debugFindAuthUser = createServerFn({ method: "POST" })
+  .inputValidator((d) => z.object({ adminUserId: z.string().uuid(), email: z.string() }).parse(d))
+  .handler(async ({ data }) => {
+    await assertAdmin(data.adminUserId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: list, error } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    if (error) throw new Error(error.message);
+    const matches = list.users
+      .filter((u) => (u.email || "").toLowerCase().includes(data.email.toLowerCase()))
+      .map((u) => ({ id: u.id, email: u.email, created_at: u.created_at }));
+    return { total: list.users.length, matches };
+  });
