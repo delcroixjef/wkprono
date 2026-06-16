@@ -150,8 +150,30 @@ function BonusResultsTab() {
     if (error) toast.error(error.message); else { toast.success("Bonusresultaten opgeslagen"); qc.invalidateQueries({ queryKey: ["bonus-results"] }); }
   }
 
+  async function toggleBonusLock() {
+    const next = !f.bonus_locked;
+    if (next && !window.confirm("Bonusvragen definitief sluiten? Deelnemers kunnen daarna geen wijzigingen meer doorvoeren.")) return;
+    setBusy(true);
+    const { error } = await supabase.from("bonus_results").update({ bonus_locked: next }).eq("singleton", true);
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(next ? "Bonusvragen vergrendeld" : "Bonusvragen ontgrendeld");
+    setForm({ ...(form ?? data), bonus_locked: next });
+    qc.invalidateQueries({ queryKey: ["bonus-results"] });
+    qc.invalidateQueries({ queryKey: ["bonus-lock"] });
+  }
+
   return (
     <div className="space-y-3 rounded-2xl border border-border bg-surface p-4">
+      <div className={`flex items-center justify-between gap-3 rounded-lg border p-3 ${f.bonus_locked ? "border-bonus-red/40 bg-bonus-red/10" : "border-border bg-muted/30"}`}>
+        <div className="text-xs">
+          <div className="font-semibold text-foreground">{f.bonus_locked ? "Bonusvragen zijn vergrendeld" : "Bonusvragen zijn open"}</div>
+          <div className="text-muted-foreground">{f.bonus_locked ? "Deelnemers kunnen niets meer wijzigen." : "Vergrendel om de bonusvragen definitief te sluiten."}</div>
+        </div>
+        <Button size="sm" variant={f.bonus_locked ? "outline" : "destructive"} onClick={toggleBonusLock} disabled={busy}>
+          {f.bonus_locked ? "Ontgrendel" : "Vergrendel definitief"}
+        </Button>
+      </div>
       <Field label="Topscorer (land)">
         <CountrySel v={f.topscorer_country} onChange={(v) => set("topscorer_country", v)} />
       </Field>
