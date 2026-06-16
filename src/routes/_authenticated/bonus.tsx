@@ -45,6 +45,11 @@ function BonusPage() {
     },
   });
 
+  const { data: lockRow } = useQuery({
+    queryKey: ["bonus-lock"],
+    queryFn: async () => (await supabase.from("bonus_results").select("bonus_locked").eq("singleton", true).maybeSingle()).data,
+  });
+
   const set = <K extends keyof Bonus>(k: K, v: Bonus[K]) => setData(prev => ({ ...prev, [k]: v }));
   const filled = [data.topscorer_country, data.clean_sheet_country, data.early_exit_country,
     (data.final_home_team && data.final_home_score !== null) ? 1 : null].filter(v => v !== null && v !== "").length;
@@ -59,7 +64,7 @@ function BonusPage() {
   }
 
   if (isLoading) return <Skeleton className="h-96" />;
-  const locked = data.is_locked;
+  const locked = data.is_locked || !!lockRow?.bonus_locked;
 
   return (
     <div className="space-y-5 pb-24">
