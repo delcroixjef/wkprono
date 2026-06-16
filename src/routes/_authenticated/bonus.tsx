@@ -71,6 +71,11 @@ function BonusPage() {
       <header>
         <h1 className="text-2xl font-semibold text-foreground">Bonusvragen</h1>
         <p className="mt-1 text-sm text-muted-foreground">In te vullen vóór 11 juni 2026 — 21:00. Max 33 pt.</p>
+        {locked && (
+          <div className="mt-3 rounded-lg border border-bonus-red/40 bg-bonus-red/10 p-3 text-xs text-foreground">
+            De bonusvragen zijn definitief gesloten. Wijzigingen zijn niet meer mogelijk.
+          </div>
+        )}
         <div className="mt-3">
           <div className="flex items-center justify-between text-xs text-muted-foreground">
             <span>{filled} / 4 ingevuld</span>
