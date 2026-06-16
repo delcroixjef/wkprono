@@ -112,6 +112,7 @@ export type Database = {
       }
       bonus_results: {
         Row: {
+          bonus_locked: boolean
           clean_sheet_countries: string[] | null
           early_exit_country: string | null
           final_away_score: number | null
@@ -124,6 +125,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          bonus_locked?: boolean
           clean_sheet_countries?: string[] | null
           early_exit_country?: string | null
           final_away_score?: number | null
@@ -136,6 +138,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          bonus_locked?: boolean
           clean_sheet_countries?: string[] | null
           early_exit_country?: string | null
           final_away_score?: number | null
