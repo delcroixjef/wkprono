@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 async function assertAdmin(adminUserId: string) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -24,6 +25,25 @@ export const setParticipantLocked = createServerFn({ method: "POST" })
       .eq("id", data.userId);
     if (error) throw new Error(error.message);
     return { ok: true };
+  });
+
+export const setBonusQuestionsLocked = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((d) => z.object({ locked: z.boolean() }).parse(d))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin
+      .from("bonus_results")
+      .update({ bonus_locked: data.locked })
+      .eq("singleton", true)
+      .select("bonus_locked")
+      .maybeSingle();
+
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Bonusinstellingen niet gevonden.");
+
+    return { ok: true, locked: row.bonus_locked };
   });
 
 export const deleteParticipant = createServerFn({ method: "POST" })
