@@ -1,8 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/integrations/supabase/client";
+import { saveBonusPrediction } from "@/lib/bonus.functions";
 import { ALL_TEAMS, TOP_10_FAVORITES } from "@/lib/teams";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,6 +34,7 @@ const EMPTY: Bonus = {
 function BonusPage() {
   const { profile } = useAuth();
   const qc = useQueryClient();
+  const saveBonus = useServerFn(saveBonusPrediction);
   const [data, setData] = useState<Bonus>(EMPTY);
   const [busy, setBusy] = useState(false);
 
@@ -57,10 +60,16 @@ function BonusPage() {
   async function save() {
     if (!profile) return;
     setBusy(true);
-    const payload = { ...data, user_id: profile.id };
-    const { error } = await supabase.from("bonus_predictions").upsert(payload, { onConflict: "user_id" });
-    setBusy(false);
-    if (error) toast.error(error.message); else { toast.success("Bonus opgeslagen"); qc.invalidateQueries({ queryKey: ["bonus"] }); }
+    try {
+      const saved = await saveBonus({ data: { ...data, userId: profile.id } });
+      setData(saved as Bonus);
+      toast.success("Bonus opgeslagen");
+      qc.invalidateQueries({ queryKey: ["bonus"] });
+    } catch (error: any) {
+      toast.error(error?.message ?? "Bonus opslaan mislukt");
+    } finally {
+      setBusy(false);
+    }
   }
 
   if (isLoading) return <Skeleton className="h-96" />;
