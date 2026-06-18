@@ -158,7 +158,7 @@ function BonusResultsTab() {
     if (next && !window.confirm("Bonusvragen definitief sluiten? Deelnemers kunnen daarna geen wijzigingen meer doorvoeren.")) return;
     setBusy(true);
     try {
-      const result = await setBonusLock({ data: { adminUserId: profile.id, locked: next } });
+      const result = await setBonusLock({ data: { locked: next } });
       toast.success(result.locked ? "Bonusvragen vergrendeld" : "Bonusvragen ontgrendeld");
       setForm({ ...(form ?? data), bonus_locked: result.locked });
       await Promise.all([
