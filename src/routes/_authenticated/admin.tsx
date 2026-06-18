@@ -16,7 +16,7 @@ import { Lock, Unlock, Save, Calculator, RefreshCw, CheckCircle2, AlertCircle, T
 import { useServerFn } from "@tanstack/react-start";
 import { triggerSync, saveMatchResult } from "@/lib/sync.functions";
 import { getProgressForNextMatchday } from "@/lib/admin-progress.functions";
-import { setParticipantLocked, deleteParticipant } from "@/lib/admin-users.functions";
+import { setParticipantLocked, deleteParticipant, setBonusQuestionsLocked } from "@/lib/admin-users.functions";
 import { formatDistanceToNow, formatDistanceToNowStrict } from "date-fns";
 import { nl } from "date-fns/locale";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -123,6 +123,8 @@ function ResultsTab() {
 
 function BonusResultsTab() {
   const qc = useQueryClient();
+  const { profile } = useAuth();
+  const setBonusLock = useServerFn(setBonusQuestionsLocked);
   const { data, isLoading } = useQuery({
     queryKey: ["bonus-results"],
     queryFn: async () => (await supabase.from("bonus_results").select("*").eq("singleton", true).maybeSingle()).data,
@@ -151,16 +153,23 @@ function BonusResultsTab() {
   }
 
   async function toggleBonusLock() {
+    if (!profile?.id) return toast.error("Geen adminprofiel gevonden");
     const next = !f.bonus_locked;
     if (next && !window.confirm("Bonusvragen definitief sluiten? Deelnemers kunnen daarna geen wijzigingen meer doorvoeren.")) return;
     setBusy(true);
-    const { error } = await supabase.from("bonus_results").update({ bonus_locked: next }).eq("singleton", true);
-    setBusy(false);
-    if (error) { toast.error(error.message); return; }
-    toast.success(next ? "Bonusvragen vergrendeld" : "Bonusvragen ontgrendeld");
-    setForm({ ...(form ?? data), bonus_locked: next });
-    qc.invalidateQueries({ queryKey: ["bonus-results"] });
-    qc.invalidateQueries({ queryKey: ["bonus-lock"] });
+    try {
+      const result = await setBonusLock({ data: { adminUserId: profile.id, locked: next } });
+      toast.success(result.locked ? "Bonusvragen vergrendeld" : "Bonusvragen ontgrendeld");
+      setForm({ ...(form ?? data), bonus_locked: result.locked });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["bonus-results"] }),
+        qc.invalidateQueries({ queryKey: ["bonus-lock"] }),
+      ]);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Bonusvragen aanpassen mislukt");
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (

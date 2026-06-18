@@ -26,6 +26,26 @@ export const setParticipantLocked = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+export const setBonusQuestionsLocked = createServerFn({ method: "POST" })
+  .inputValidator((d) =>
+    z.object({ adminUserId: z.string().uuid(), locked: z.boolean() }).parse(d),
+  )
+  .handler(async ({ data }) => {
+    await assertAdmin(data.adminUserId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row, error } = await supabaseAdmin
+      .from("bonus_results")
+      .update({ bonus_locked: data.locked })
+      .eq("singleton", true)
+      .select("bonus_locked")
+      .maybeSingle();
+
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Bonusinstellingen niet gevonden.");
+
+    return { ok: true, locked: row.bonus_locked };
+  });
+
 export const deleteParticipant = createServerFn({ method: "POST" })
   .inputValidator((d) =>
     z.object({ adminUserId: z.string().uuid(), userId: z.string().uuid() }).parse(d),
