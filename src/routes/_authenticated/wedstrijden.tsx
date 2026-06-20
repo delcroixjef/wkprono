@@ -30,14 +30,30 @@ function WedstrijdenPage() {
     queryKey: ["wedstrijden", profile?.id],
     enabled: !!profile,
     queryFn: async () => {
-      const [m, p, pr] = await Promise.all([
+      // Predictions kunnen >1000 zijn (Supabase default limit). Paginate via .range().
+      const fetchAllPreds = async () => {
+        const pageSize = 1000;
+        const all: Pred[] = [];
+        for (let from = 0; ; from += pageSize) {
+          const { data: chunk, error } = await supabase
+            .from("predictions")
+            .select("match_id,predicted_home_score,predicted_away_score,user_id")
+            .range(from, from + pageSize - 1);
+          if (error) throw error;
+          const rows = (chunk ?? []) as Pred[];
+          all.push(...rows);
+          if (rows.length < pageSize) break;
+        }
+        return all;
+      };
+      const [m, preds, pr] = await Promise.all([
         supabase.from("matches").select("*").order("match_date"),
-        supabase.from("predictions").select("match_id,predicted_home_score,predicted_away_score,user_id"),
+        fetchAllPreds(),
         supabase.from("profiles").select("id,display_name,avatar_initials"),
       ]);
       return {
         matches: (m.data ?? []) as Match[],
-        preds: (p.data ?? []) as Pred[],
+        preds,
         profiles: (pr.data ?? []) as Profile[],
       };
     },
