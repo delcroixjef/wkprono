@@ -154,6 +154,36 @@ export async function runSync(): Promise<SyncResult> {
       byTeams.set(`${m.home_team}::${m.away_team}`, m);
     }
 
+    // KO-bracket auto-fill: matches met placeholders (bv. "A1", "W74", "3-ABCDF")
+    // krijgen echte teamnamen zodra die in de externe bron bekend zijn.
+    // Match-criterium: identieke kickoff-timestamp (UTC-instant uit ESPN feed).
+    const syncedByKickoff = new Map<number, SyncedMatch>();
+    for (const s of syncedMatches) {
+      if (s.kickoff) syncedByKickoff.set(new Date(s.kickoff).getTime(), s);
+    }
+    for (const dbMatch of dbMatches ?? []) {
+      const homeIsPlaceholder = !REAL_TEAMS.has(dbMatch.home_team);
+      const awayIsPlaceholder = !REAL_TEAMS.has(dbMatch.away_team);
+      if (!homeIsPlaceholder && !awayIsPlaceholder) continue;
+      const synced = syncedByKickoff.get(new Date(dbMatch.match_date).getTime());
+      if (!synced) continue;
+      if (!REAL_TEAMS.has(synced.home) || !REAL_TEAMS.has(synced.away)) continue;
+      // Conflict-vermijding: tegenstander al ergens anders vastgelegd? skip.
+      if (byTeams.has(`${synced.home}::${synced.away}`)) continue;
+
+      const { error: renameErr } = await supabaseAdmin
+        .from("matches")
+        .update({ home_team: synced.home, away_team: synced.away })
+        .eq("id", dbMatch.id);
+      if (renameErr) { console.error("[sync] KO-fill faalde", dbMatch.id, renameErr); continue; }
+
+      // Houd in-memory state in sync zodat de score-loop hieronder kan matchen.
+      byTeams.delete(`${dbMatch.home_team}::${dbMatch.away_team}`);
+      dbMatch.home_team = synced.home;
+      dbMatch.away_team = synced.away;
+      byTeams.set(`${synced.home}::${synced.away}`, dbMatch);
+    }
+
     const nowMs = Date.now();
     const lockBuffer = 30 * 60 * 1000;
 
