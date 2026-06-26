@@ -50,5 +50,17 @@ export const saveMatchResult = createServerFn({ method: "POST" })
     const { error: recalcError } = await supabaseAdmin.rpc("calculate_match_points", { _match_id: data.matchId });
     if (recalcError) throw new Error(recalcError.message);
 
-    return { ok: true };
+    // Direct na een uitslag: probeer KO-bracket placeholders te resolven via de externe bron.
+    // Faalt stil — de admin-actie zelf moet altijd slagen.
+    let bracketFilled = 0;
+    try {
+      const { runSync } = await import("./sync.server");
+      const r = await runSync();
+      // runSync logt zelf; we geven enkel terug of er iets gewijzigd is.
+      bracketFilled = r.matchesUpdated;
+    } catch (e) {
+      console.error("[saveMatchResult] post-save sync faalde", e);
+    }
+
+    return { ok: true, bracketFilled };
   });
