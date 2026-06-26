@@ -3,7 +3,9 @@
 // Detects score changes via last_synced_score and respects manual overrides.
 
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
-import { TOP_10_FAVORITES } from "./teams";
+import { ALL_TEAMS, TOP_10_FAVORITES } from "./teams";
+
+const REAL_TEAMS = new Set<string>(ALL_TEAMS);
 
 const SCOREBOARD_URL = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard";
 
@@ -69,6 +71,7 @@ type SyncedMatch = {
   homeScore: number | null;
   awayScore: number | null;
   completed: boolean;
+  kickoff: string | null;
 };
 
 function parseScoreboardEvent(event: FeedEvent): SyncedMatch | null {
@@ -93,6 +96,7 @@ function parseScoreboardEvent(event: FeedEvent): SyncedMatch | null {
     homeScore: Number.isFinite(homeScore) ? homeScore : null,
     awayScore: Number.isFinite(awayScore) ? awayScore : null,
     completed: !!status?.completed || status?.state === "post",
+    kickoff: event.date ?? null,
   };
 }
 
