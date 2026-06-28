@@ -168,7 +168,9 @@ export async function runSync(): Promise<SyncResult> {
       byTeams.set(teamKey(m.home_team, m.away_team), m);
     }
 
-    async function applyKnownTeams(dbMatch: typeof dbMatches[number], synced: SyncedMatch) {
+    type DbMatch = NonNullable<typeof dbMatches>[number];
+
+    async function applyKnownTeams(dbMatch: DbMatch, synced: SyncedMatch) {
       if (!REAL_TEAMS.has(synced.home) || !REAL_TEAMS.has(synced.away)) return false;
 
       const currentKey = teamKey(dbMatch.home_team, dbMatch.away_team);
