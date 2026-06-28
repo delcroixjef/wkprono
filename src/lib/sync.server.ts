@@ -6,6 +6,7 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { ALL_TEAMS, TOP_10_FAVORITES } from "./teams";
 
 const REAL_TEAMS = new Set<string>(ALL_TEAMS);
+const LOOSE_KICKOFF_MATCH_WINDOW_MS = 14 * 60 * 60 * 1000;
 
 const SCOREBOARD_URL = "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard";
 
@@ -43,6 +44,19 @@ const TEAM_MAP: Record<string, string> = {
 function mapTeam(name?: string | null): string | null {
   if (!name) return null;
   return TEAM_MAP[name.trim()] ?? name.trim();
+}
+
+function teamKey(home: string, away: string) {
+  return `${home}::${away}`;
+}
+
+function isPlaceholderTeam(team: string) {
+  return !REAL_TEAMS.has(team);
+}
+
+function kickoffMs(value?: string | null) {
+  if (!value) return Number.NaN;
+  return new Date(value).getTime();
 }
 
 type FeedCompetitor = {
@@ -151,7 +165,34 @@ export async function runSync(): Promise<SyncResult> {
 
     const byTeams = new Map<string, typeof dbMatches[number]>();
     for (const m of dbMatches ?? []) {
-      byTeams.set(`${m.home_team}::${m.away_team}`, m);
+      byTeams.set(teamKey(m.home_team, m.away_team), m);
+    }
+
+    type DbMatch = NonNullable<typeof dbMatches>[number];
+
+    async function applyKnownTeams(dbMatch: DbMatch, synced: SyncedMatch) {
+      if (!REAL_TEAMS.has(synced.home) || !REAL_TEAMS.has(synced.away)) return false;
+
+      const currentKey = teamKey(dbMatch.home_team, dbMatch.away_team);
+      const nextKey = teamKey(synced.home, synced.away);
+      const existing = byTeams.get(nextKey);
+      if (existing && existing.id !== dbMatch.id) return false;
+
+      const shouldUpdateTeams = dbMatch.home_team !== synced.home || dbMatch.away_team !== synced.away;
+      if (!shouldUpdateTeams) return false;
+
+      const { error: renameErr } = await supabaseAdmin
+        .from("matches")
+        .update({ home_team: synced.home, away_team: synced.away })
+        .eq("id", dbMatch.id);
+      if (renameErr) { console.error("[sync] KO-fill faalde", dbMatch.id, renameErr); return false; }
+
+      byTeams.delete(currentKey);
+      dbMatch.home_team = synced.home;
+      dbMatch.away_team = synced.away;
+      byTeams.set(nextKey, dbMatch);
+      matchesUpdated++;
+      return true;
     }
 
     // KO-bracket auto-fill: matches met placeholders (bv. "A1", "W74", "3-ABCDF")
@@ -159,36 +200,41 @@ export async function runSync(): Promise<SyncResult> {
     // Match-criterium: identieke kickoff-timestamp (UTC-instant uit ESPN feed).
     const syncedByKickoff = new Map<number, SyncedMatch>();
     for (const s of syncedMatches) {
-      if (s.kickoff) syncedByKickoff.set(new Date(s.kickoff).getTime(), s);
+      if (s.kickoff) syncedByKickoff.set(kickoffMs(s.kickoff), s);
     }
     for (const dbMatch of dbMatches ?? []) {
-      const homeIsPlaceholder = !REAL_TEAMS.has(dbMatch.home_team);
-      const awayIsPlaceholder = !REAL_TEAMS.has(dbMatch.away_team);
+      const homeIsPlaceholder = isPlaceholderTeam(dbMatch.home_team);
+      const awayIsPlaceholder = isPlaceholderTeam(dbMatch.away_team);
       if (!homeIsPlaceholder && !awayIsPlaceholder) continue;
-      const synced = syncedByKickoff.get(new Date(dbMatch.match_date).getTime());
+      const synced = syncedByKickoff.get(kickoffMs(dbMatch.match_date));
       if (!synced) continue;
-      if (!REAL_TEAMS.has(synced.home) || !REAL_TEAMS.has(synced.away)) continue;
-      // Conflict-vermijding: tegenstander al ergens anders vastgelegd? skip.
-      if (byTeams.has(`${synced.home}::${synced.away}`)) continue;
+      await applyKnownTeams(dbMatch, synced);
+    }
 
-      const { error: renameErr } = await supabaseAdmin
-        .from("matches")
-        .update({ home_team: synced.home, away_team: synced.away })
-        .eq("id", dbMatch.id);
-      if (renameErr) { console.error("[sync] KO-fill faalde", dbMatch.id, renameErr); continue; }
+    // Sommige officiële KO-starturen in de externe feed wijken af van de vooraf ingegeven
+    // placeholderkalender. Als de aftrap niet exact matcht, koppel dan het dichtstbijzijnde
+    // nog niet gebruikte externe duel binnen dezelfde speeldag/nacht-venster.
+    const placeholderMatches = [...(dbMatches ?? [])]
+      .filter((m) => m.phase !== "groepsfase" && (isPlaceholderTeam(m.home_team) || isPlaceholderTeam(m.away_team)))
+      .sort((a, b) => kickoffMs(a.match_date) - kickoffMs(b.match_date));
 
-      // Houd in-memory state in sync zodat de score-loop hieronder kan matchen.
-      byTeams.delete(`${dbMatch.home_team}::${dbMatch.away_team}`);
-      dbMatch.home_team = synced.home;
-      dbMatch.away_team = synced.away;
-      byTeams.set(`${synced.home}::${synced.away}`, dbMatch);
+    for (const dbMatch of placeholderMatches) {
+      const dbKickoff = kickoffMs(dbMatch.match_date);
+      const candidate = syncedMatches
+        .filter((s) => s.kickoff && REAL_TEAMS.has(s.home) && REAL_TEAMS.has(s.away))
+        .filter((s) => !byTeams.has(teamKey(s.home, s.away)))
+        .map((s) => ({ synced: s, distance: Math.abs(kickoffMs(s.kickoff) - dbKickoff) }))
+        .filter((x) => x.distance <= LOOSE_KICKOFF_MATCH_WINDOW_MS)
+        .sort((a, b) => a.distance - b.distance)[0]?.synced;
+
+      if (candidate) await applyKnownTeams(dbMatch, candidate);
     }
 
     const nowMs = Date.now();
     const lockBuffer = 30 * 60 * 1000;
 
     for (const synced of syncedMatches) {
-      const dbMatch = byTeams.get(`${synced.home}::${synced.away}`) ?? null;
+      const dbMatch = byTeams.get(teamKey(synced.home, synced.away)) ?? null;
       if (!dbMatch) continue;
 
       const isLockedManual = dbMatch.source === "manual" || dbMatch.source === "corrected";
