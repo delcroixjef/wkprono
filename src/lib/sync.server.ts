@@ -178,21 +178,18 @@ export async function runSync(): Promise<SyncResult> {
       const existing = byTeams.get(nextKey);
       if (existing && existing.id !== dbMatch.id) return false;
 
-      const syncedKickoff = synced.kickoff ?? dbMatch.match_date;
       const shouldUpdateTeams = dbMatch.home_team !== synced.home || dbMatch.away_team !== synced.away;
-      const shouldUpdateKickoff = Math.abs(kickoffMs(dbMatch.match_date) - kickoffMs(syncedKickoff)) > 60 * 1000;
-      if (!shouldUpdateTeams && !shouldUpdateKickoff) return false;
+      if (!shouldUpdateTeams) return false;
 
       const { error: renameErr } = await supabaseAdmin
         .from("matches")
-        .update({ home_team: synced.home, away_team: synced.away, match_date: syncedKickoff })
+        .update({ home_team: synced.home, away_team: synced.away })
         .eq("id", dbMatch.id);
       if (renameErr) { console.error("[sync] KO-fill faalde", dbMatch.id, renameErr); return false; }
 
       byTeams.delete(currentKey);
       dbMatch.home_team = synced.home;
       dbMatch.away_team = synced.away;
-      dbMatch.match_date = syncedKickoff;
       byTeams.set(nextKey, dbMatch);
       matchesUpdated++;
       return true;
