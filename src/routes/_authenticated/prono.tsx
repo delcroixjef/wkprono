@@ -128,11 +128,12 @@ function PredictionsBlock({ matches, preds, userId, onSaved }: { matches: Match[
 
   if (matches.length === 0) return <p className="rounded-xl bg-muted px-4 py-8 text-center text-sm text-muted-foreground">Geen wedstrijden in deze fase.</p>;
 
-  // Group by Brussels-calendar day
+  // Group by football-day (Brussels), with 06:00 cutoff so nachtwedstrijden bij de vorige dag horen.
+  const FOOTBALL_DAY_OFFSET_MS = 6 * 60 * 60 * 1000;
   const dayKey = (iso: string) => {
     const parts = new Intl.DateTimeFormat("en-CA", {
       timeZone: "Europe/Brussels", year: "numeric", month: "2-digit", day: "2-digit",
-    }).formatToParts(new Date(iso));
+    }).formatToParts(new Date(new Date(iso).getTime() - FOOTBALL_DAY_OFFSET_MS));
     return `${parts.find(p=>p.type==="year")!.value}-${parts.find(p=>p.type==="month")!.value}-${parts.find(p=>p.type==="day")!.value}`;
   };
   const byDay = new Map<string, Match[]>();
