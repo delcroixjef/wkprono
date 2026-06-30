@@ -125,6 +125,7 @@ function BonusResultsTab() {
   const qc = useQueryClient();
   const { profile } = useAuth();
   const setBonusLock = useServerFn(setBonusQuestionsLocked);
+  const saveResults = useServerFn(saveBonusResults);
   const { data, isLoading } = useQuery({
     queryKey: ["bonus-results"],
     queryFn: async () => (await supabase.from("bonus_results").select("*").eq("singleton", true).maybeSingle()).data,
@@ -136,20 +137,33 @@ function BonusResultsTab() {
   const set = (k: string, v: any) => setForm({ ...(form ?? data), [k]: v });
 
   async function save() {
+    if (!profile?.id) return toast.error("Geen adminprofiel gevonden");
     setBusy(true);
-    const payload = {
-      singleton: true,
-      topscorer_country: f.topscorer_country || null,
-      clean_sheet_countries: typeof f.clean_sheet_countries === "string" ? f.clean_sheet_countries.split(",").map((s: string) => s.trim()).filter(Boolean) : (f.clean_sheet_countries ?? []),
-      early_exit_country: f.early_exit_country || null,
-      final_home_team: f.final_home_team || null,
-      final_away_team: f.final_away_team || null,
-      final_home_score: f.final_home_score ?? null,
-      final_away_score: f.final_away_score ?? null,
-    };
-    const { error } = await supabase.from("bonus_results").update(payload).eq("singleton", true);
-    setBusy(false);
-    if (error) toast.error(error.message); else { toast.success("Bonusresultaten opgeslagen"); qc.invalidateQueries({ queryKey: ["bonus-results"] }); }
+    const cleanSheets = typeof f.clean_sheet_countries === "string"
+      ? f.clean_sheet_countries.split(",").map((s: string) => s.trim()).filter(Boolean)
+      : (f.clean_sheet_countries ?? []);
+    try {
+      await saveResults({ data: {
+        adminUserId: profile.id,
+        topscorer_country: f.topscorer_country || null,
+        clean_sheet_countries: cleanSheets,
+        early_exit_country: f.early_exit_country || null,
+        final_home_team: f.final_home_team || null,
+        final_away_team: f.final_away_team || null,
+        final_home_score: f.final_home_score ?? null,
+        final_away_score: f.final_away_score ?? null,
+      }});
+      toast.success("Bonusresultaten opgeslagen — bonuspunten herberekend");
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ["bonus-results"] }),
+        qc.invalidateQueries({ queryKey: ["leaderboard"] }),
+        qc.invalidateQueries({ queryKey: ["dashboard"] }),
+      ]);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Opslaan mislukt");
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function toggleBonusLock() {
