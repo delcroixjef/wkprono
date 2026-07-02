@@ -8,8 +8,12 @@ type Props = {
 };
 
 export function MatchStatusBadge({ matchDate, isLocked, hasResult, source }: Props) {
-  const ms = new Date(matchDate).getTime() - Date.now();
-  const closingSoon = !isLocked && ms > 0 && ms <= 60 * 60 * 1000;
+  const LOCK_BUFFER_MS = 30 * 60 * 1000;
+  const kickoffMs = new Date(matchDate).getTime();
+  const msToKickoff = kickoffMs - Date.now();
+  const deadlinePassed = Date.now() >= kickoffMs - LOCK_BUFFER_MS;
+  const locked = isLocked || deadlinePassed;
+  const closingSoon = !locked && msToKickoff > 0 && msToKickoff <= 60 * 60 * 1000;
 
   if (hasResult) {
     if (source === "corrected") {
@@ -20,7 +24,7 @@ export function MatchStatusBadge({ matchDate, isLocked, hasResult, source }: Pro
     }
     return <Pill icon={CheckCircle2} className="bg-success/10 text-success">Auto opgehaald</Pill>;
   }
-  if (isLocked) return <Pill icon={Lock} className="bg-muted text-muted-foreground">Gesloten</Pill>;
+  if (locked) return <Pill icon={Lock} className="bg-muted text-muted-foreground">Gesloten</Pill>;
   if (closingSoon) return <Pill icon={Clock} className="bg-destructive/10 text-destructive">Sluit binnenkort</Pill>;
   return <Pill icon={Bot} className="bg-primary-soft text-primary">Open</Pill>;
 }
