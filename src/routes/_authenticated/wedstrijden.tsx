@@ -62,11 +62,14 @@ function WedstrijdenPage() {
 
   if (isLoading || !data) return <Skeleton className="h-96" />;
 
+  const LOCK_BUFFER_MS = 30 * 60 * 1000;
+  const isDeadlinePassed = (m: Match) => Date.now() >= new Date(m.match_date).getTime() - LOCK_BUFFER_MS;
   const filtered = data.matches.filter((m) => {
     if (phase !== "all" && m.phase !== phase) return false;
     if (group !== "all" && m.group_code !== group) return false;
-    if (status === "open" && (m.is_locked || m.actual_home_score !== null)) return false;
-    if (status === "closed" && !m.is_locked) return false;
+    const closed = m.is_locked || isDeadlinePassed(m);
+    if (status === "open" && (closed || m.actual_home_score !== null)) return false;
+    if (status === "closed" && !closed) return false;
     if (status === "result" && m.actual_home_score === null) return false;
     return true;
   });
