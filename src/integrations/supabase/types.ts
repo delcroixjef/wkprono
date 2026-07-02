@@ -552,6 +552,7 @@ export type Database = {
       }
     }
     Functions: {
+      auto_lock_matches: { Args: never; Returns: undefined }
       calculate_match_points: {
         Args: { _match_id: string }
         Returns: undefined
