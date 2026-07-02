@@ -59,6 +59,11 @@ function kickoffMs(value?: string | null) {
   return new Date(value).getTime();
 }
 
+function kickoffChanged(current?: string | null, next?: string | null) {
+  if (!current || !next) return false;
+  return Math.abs(kickoffMs(current) - kickoffMs(next)) > 60_000;
+}
+
 type FeedCompetitor = {
   homeAway?: "home" | "away";
   score?: string;
@@ -239,6 +244,21 @@ export async function runSync(): Promise<SyncResult> {
 
       const isLockedManual = dbMatch.source === "manual" || dbMatch.source === "corrected";
       const canOverwrite = !isLockedManual || dbMatch.auto_sync_override;
+
+      // Keep official kickoff times aligned with ESPN as soon as teams are known.
+      // This prevents Belgian-time confusion and keeps the 30-minute lock tied to the real aftrap.
+      if (synced.kickoff && kickoffChanged(dbMatch.match_date, synced.kickoff)) {
+        const { error: timeErr } = await supabaseAdmin
+          .from("matches")
+          .update({ match_date: synced.kickoff, last_synced_at: new Date().toISOString() })
+          .eq("id", dbMatch.id);
+        if (timeErr) {
+          console.error("[sync] kickoff update faalde", dbMatch.id, timeErr);
+        } else {
+          dbMatch.match_date = synced.kickoff;
+          matchesUpdated++;
+        }
+      }
 
       // Update score if changed (or first time) — only when allowed
       if (synced.completed && synced.homeScore !== null && synced.awayScore !== null) {
